@@ -32,7 +32,7 @@ while getopts "p:k:d:v:h" opt; do
         p) PLATFORM="$OPTARG";;
         k) LICENSE_KEY="$OPTARG";;
         d) INSTALL_DIR="$OPTARG";;
-        v) LATEST_RELEASE="$OPTARG";;
+        v) LATEST_RELEASE="vv1.0.11";;
         h) usage;;
         ?) usage;;
     esac

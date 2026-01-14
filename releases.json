@@ -75,7 +75,9 @@
         "version": "v2616101459",
         "date": "2025-09-16",
         "latest": false,
-        "badges": ["ARM64 Support"],
+        "badges": [
+          "ARM64 Support"
+        ],
         "assets": [
           {
             "name": "clustereye-agent-linux-amd64",
@@ -114,10 +116,22 @@
       "file": "install.sh",
       "description": "Automated installation script for ClusterEye Agent. Supports PostgreSQL, MongoDB, and MS SQL Server monitoring with systemd service setup.",
       "options": [
-        { "flag": "-p <platform>", "desc": "Database platform (postgres, mongo, mssql)" },
-        { "flag": "-k <key>", "desc": "License key (optional)" },
-        { "flag": "-d <dir>", "desc": "Install directory (default: /opt/clustereye)" },
-        { "flag": "-v <version>", "desc": "Specific version to install" }
+        {
+          "flag": "-p <platform>",
+          "desc": "Database platform (postgres, mongo, mssql)"
+        },
+        {
+          "flag": "-k <key>",
+          "desc": "License key (optional)"
+        },
+        {
+          "flag": "-d <dir>",
+          "desc": "Install directory (default: /opt/clustereye)"
+        },
+        {
+          "flag": "-v <version>",
+          "desc": "Specific version to install"
+        }
       ]
     }
   }
