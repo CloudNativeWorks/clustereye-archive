@@ -92,10 +92,10 @@ jobs:
           const releasesPath = './releases.json';
           const data = JSON.parse(fs.readFileSync(releasesPath, 'utf8'));
 
-          // Check if version already exists
+          // Check if version already exists - force update by removing old entry
           const existingIndex = data.agent.releases.findIndex(r => r.version === version);
           if (existingIndex !== -1) {
-            console.log(`Version ${version} already exists, updating...`);
+            console.log(`Version ${version} already exists, force updating with fresh download...`);
             data.agent.releases.splice(existingIndex, 1);
           }
 
@@ -173,11 +173,22 @@ jobs:
       - name: Generate index.html
         run: node scripts/generate-index.js
 
+      - name: Copy install.sh to downloads
+        run: |
+          # Copy install.sh to version-specific folder for agents to download
+          cp install.sh downloads/agent/${{ inputs.version }}/install.sh
+
+          # Also keep a "latest" copy at root downloads folder
+          mkdir -p downloads/agent/latest
+          cp install.sh downloads/agent/latest/install.sh
+
+          echo "install.sh copied to downloads/agent/${{ inputs.version }}/ and downloads/agent/latest/"
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add .
-          git commit -m "Add agent release ${{ inputs.version }}" || echo "No changes to commit"
+          git commit -m "Add agent release ${{ inputs.version }} (force update)" || echo "No changes to commit"
           git push
