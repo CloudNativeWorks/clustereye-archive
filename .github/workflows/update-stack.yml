@@ -1,0 +1,60 @@
+name: Update Stack Script
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: 'Source repository (owner/repo)'
+        required: true
+        type: string
+        default: 'CloudNativeWorks/clustereye'
+      source_path:
+        description: 'Path to script in source repo'
+        required: true
+        type: string
+        default: 'scripts/clustereye-stack-install.sh'
+
+jobs:
+  update-stack:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download stack script
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SOURCE_REPO="${{ inputs.source_repo }}"
+          SOURCE_PATH="${{ inputs.source_path }}"
+
+          echo "Downloading stack script from $SOURCE_REPO/$SOURCE_PATH"
+
+          # Download the script from the source repository
+          gh api repos/$SOURCE_REPO/contents/$SOURCE_PATH \
+            --jq '.content' | base64 -d > clustereye-stack-install.sh
+
+          chmod +x clustereye-stack-install.sh
+
+          echo "Downloaded stack script:"
+          head -20 clustereye-stack-install.sh
+
+      - name: Generate index.html
+        run: node scripts/generate-index.js
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          git commit -m "Update stack install script from ${{ inputs.source_repo }}" || echo "No changes to commit"
+          git push

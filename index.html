@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClusterEye Archive - Official Downloads</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">ClusterEye<span class="logo-accent">Archive</span></div>
+            <p class="subtitle">Pre-compiled binaries and installation scripts for ClusterEye</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Quick Install Section -->
+        <section class="section">
+            <h2 class="section-title">Quick Install</h2>
+            <div class="install-cards">
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">$</span>
+                        <span class="install-label">Full Stack (Kind + Helm)</span>
+                    </div>
+                    <div class="code-block">
+                        <code id="stack-cmd">curl -sSL https://archive.clustereye.com/clustereye-stack-install.sh | bash</code>
+                        <button class="copy-btn" onclick="copyToClipboard('stack-cmd')" title="Copy to clipboard">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="install-note">Installs Kind, Helm, and the complete ClusterEye stack on Ubuntu 24.04</p>
+                </div>
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">$</span>
+                        <span class="install-label">Agent Only (Linux)</span>
+                    </div>
+                    <div class="code-block">
+                        <code id="agent-cmd">curl -sSL https://archive.clustereye.com/install.sh | sudo bash -s -- -p postgres</code>
+                        <button class="copy-btn" onclick="copyToClipboard('agent-cmd')" title="Copy to clipboard">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="install-note">Platforms: <code>postgres</code>, <code>mongo</code>, <code>mssql</code></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabs Navigation -->
+        <section class="section">
+            <div class="tabs">
+                <button class="tab active" data-tab="agent">ClusterEye Agent</button>
+                <button class="tab" data-tab="scripts">Install Scripts</button>
+            </div>
+
+            <!-- Agent Tab Content -->
+            <div class="tab-content active" id="agent-content">
+                <div class="releases">
+
+                    <div class="release-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">vv1.0.11</span>
+                                <span class="release-badge latest">Latest</span>
+                            </div>
+                            <span class="release-date">January 14, 2026</span>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-amd64</span>
+                                    <span class="asset-arch">x86_64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/vv1.0.11/clustereye-agent-linux-amd64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/vv1.0.11/clustereye-agent-linux-amd64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">config.yaml</span>
+                                    <span class="asset-arch">Example Config</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/vv1.0.11/config.yaml" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="release-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">vv3</span>
+                                
+                            </div>
+                            <span class="release-date">November 19, 2025</span>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-amd64</span>
+                                    <span class="asset-arch">x86_64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/vv3/clustereye-agent-linux-amd64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/vv3/clustereye-agent-linux-amd64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">config.yaml</span>
+                                    <span class="asset-arch">Example Config</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/vv3/config.yaml" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="release-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">v1.2.04101953</span>
+                                
+                            </div>
+                            <span class="release-date">November 4, 2025</span>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-amd64</span>
+                                    <span class="asset-arch">x86_64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/v1.2.04101953/clustereye-agent-linux-amd64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/v1.2.04101953/clustereye-agent-linux-amd64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">config.yaml</span>
+                                    <span class="asset-arch">Example Config</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/v1.2.04101953/config.yaml" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="release-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">vV1.2.0410</span>
+                                
+                            </div>
+                            <span class="release-date">November 4, 2025</span>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-amd64</span>
+                                    <span class="asset-arch">x86_64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/vV1.2.0410/clustereye-agent-linux-amd64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/vV1.2.0410/clustereye-agent-linux-amd64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">config.yaml</span>
+                                    <span class="asset-arch">Example Config</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/vV1.2.0410/config.yaml" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="release-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">v2616101459</span>
+                                <span class="release-badge arm">ARM64 Support</span>
+                            </div>
+                            <span class="release-date">September 16, 2025</span>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-amd64</span>
+                                    <span class="asset-arch">x86_64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/v2616101459/clustereye-agent-linux-amd64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/v2616101459/clustereye-agent-linux-amd64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-arm64</span>
+                                    <span class="asset-arch">aarch64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/v2616101459/clustereye-agent-linux-arm64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/v2616101459/clustereye-agent-linux-arm64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">config.yaml</span>
+                                    <span class="asset-arch">Example Config</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/v2616101459/config.yaml" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scripts Tab Content -->
+            <div class="tab-content" id="scripts-content">
+                <div class="scripts-grid">
+
+                    <div class="script-card">
+                        <div class="script-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                        </div>
+                        <h3>ClusterEye Stack Install</h3>
+                        <p>Complete stack installation for Ubuntu 24.04. Installs Kind, Helm, and deploys the full ClusterEye platform with PostgreSQL, InfluxDB, and all services.</p>
+                        <div class="script-usage">
+                            <div class="code-block small">
+                                <code>curl -sSL https://archive.clustereye.com/clustereye-stack-install.sh | bash</code>
+                            </div>
+                        </div>
+                        <div class="script-options">
+                            <h4>Features:</h4>
+                            <ul>
+                                <li>Interactive configuration prompts</li>
+                                <li>Automatic Kind cluster creation (1 control-plane + 2 workers)</li>
+                                <li>Helm-based deployment</li>
+                                <li>SSL/HTTPS support</li>
+                                <li>Auto-generated secure credentials</li>
+                            </ul>
+                        </div>
+                        <a href="clustereye-stack-install.sh" download class="btn-download full-width">Download clustereye-stack-install.sh</a>
+                    </div>
+
+                    <div class="script-card">
+                        <div class="script-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="4 17 10 11 4 5"></polyline>
+                                <line x1="12" y1="19" x2="20" y2="19"></line>
+                            </svg>
+                        </div>
+                        <h3>Agent Install Script</h3>
+                        <p>Automated installation script for ClusterEye Agent. Supports PostgreSQL, MongoDB, and MS SQL Server monitoring with systemd service setup.</p>
+                        <div class="script-usage">
+                            <div class="code-block small">
+                                <code>curl -sSL https://archive.clustereye.com/install.sh | sudo bash -s -- -p postgres</code>
+                            </div>
+                        </div>
+                        <div class="script-options">
+                            <h4>Options:</h4>
+                            <ul>
+                                <li><code>-p <platform></code> - Database platform (postgres, mongo, mssql)</li>
+                                <li><code>-k <key></code> - License key (optional)</li>
+                                <li><code>-d <dir></code> - Install directory (default: /opt/clustereye)</li>
+                                <li><code>-v <version></code> - Specific version to install</li>
+                            </ul>
+                        </div>
+                        <a href="install.sh" download class="btn-download full-width">Download install.sh</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Maintained by <a href="https://github.com/CloudNativeWorks">CloudNativeWorks</a></p>
+            <p class="footer-links">
+                <a href="https://github.com/CloudNativeWorks/clustereye-agent">GitHub</a>
+                <span class="separator">|</span>
+                <a href="https://github.com/CloudNativeWorks/clustereye-agent/issues">Issues</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + '-content').classList.add('active');
+            });
+        });
+
+        // Copy to clipboard
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector(`#${elementId}`).parentElement.querySelector('.copy-btn');
+                btn.classList.add('copied');
+                setTimeout(() => btn.classList.remove('copied'), 2000);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+name: Update Agent Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Agent version to add (e.g., v1.0.12)'
+        required: true
+        type: string
+      set_latest:
+        description: 'Set as latest release'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  update-agent:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch release info from GitHub
+        id: fetch-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ inputs.version }}"
+          REPO="CloudNativeWorks/clustereye-agent"
+
+          echo "Fetching release info for $VERSION from $REPO"
+
+          # Get release info
+          RELEASE_INFO=$(gh api repos/$REPO/releases/tags/$VERSION)
+
+          # Extract published date
+          PUBLISHED_AT=$(echo "$RELEASE_INFO" | jq -r '.published_at' | cut -d'T' -f1)
+          echo "date=$PUBLISHED_AT" >> $GITHUB_OUTPUT
+
+          # Get assets
+          ASSETS=$(echo "$RELEASE_INFO" | jq -c '[.assets[] | {name: .name, url: .browser_download_url}]')
+          echo "assets=$ASSETS" >> $GITHUB_OUTPUT
+
+          echo "Release date: $PUBLISHED_AT"
+          echo "Assets: $ASSETS"
+
+      - name: Create downloads directory
+        run: mkdir -p downloads/agent/${{ inputs.version }}
+
+      - name: Download assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ inputs.version }}"
+          REPO="CloudNativeWorks/clustereye-agent"
+
+          echo "Downloading assets for $VERSION"
+
+          # Download each asset
+          gh release download $VERSION \
+            --repo $REPO \
+            --dir downloads/agent/$VERSION \
+            --pattern '*'
+
+          echo "Downloaded files:"
+          ls -la downloads/agent/$VERSION/
+
+      - name: Update releases.json
+        run: |
+          VERSION="${{ inputs.version }}"
+          DATE="${{ steps.fetch-release.outputs.date }}"
+          ASSETS='${{ steps.fetch-release.outputs.assets }}'
+          SET_LATEST="${{ inputs.set_latest }}"
+
+          # Create a Node.js script to update releases.json
+          node << 'EOF'
+          const fs = require('fs');
+
+          const version = process.env.VERSION;
+          const date = process.env.DATE;
+          const assets = JSON.parse(process.env.ASSETS);
+          const setLatest = process.env.SET_LATEST === 'true';
+
+          const releasesPath = './releases.json';
+          const data = JSON.parse(fs.readFileSync(releasesPath, 'utf8'));
+
+          // Check if version already exists
+          const existingIndex = data.agent.releases.findIndex(r => r.version === version);
+          if (existingIndex !== -1) {
+            console.log(`Version ${version} already exists, updating...`);
+            data.agent.releases.splice(existingIndex, 1);
+          }
+
+          // Build assets array
+          const releaseAssets = [];
+          const hasArm64 = assets.some(a => a.name.includes('arm64') && !a.name.endsWith('.sha256'));
+
+          // Add amd64 binary
+          if (assets.some(a => a.name === 'clustereye-agent-linux-amd64')) {
+            releaseAssets.push({
+              name: 'clustereye-agent-linux-amd64',
+              arch: 'x86_64',
+              hasSha256: assets.some(a => a.name === 'clustereye-agent-linux-amd64.sha256')
+            });
+          }
+
+          // Add arm64 binary
+          if (hasArm64) {
+            releaseAssets.push({
+              name: 'clustereye-agent-linux-arm64',
+              arch: 'aarch64',
+              hasSha256: assets.some(a => a.name === 'clustereye-agent-linux-arm64.sha256')
+            });
+          }
+
+          // Add config.yaml
+          if (assets.some(a => a.name === 'config.yaml')) {
+            releaseAssets.push({
+              name: 'config.yaml',
+              arch: 'Example Config',
+              hasSha256: false
+            });
+          }
+
+          // Create new release entry
+          const newRelease = {
+            version: version,
+            date: date,
+            latest: setLatest,
+            assets: releaseAssets
+          };
+
+          // Add ARM64 badge if applicable
+          if (hasArm64) {
+            newRelease.badges = ['ARM64 Support'];
+          }
+
+          // If setting as latest, remove latest from others
+          if (setLatest) {
+            data.agent.releases.forEach(r => {
+              r.latest = false;
+            });
+          }
+
+          // Add new release at the beginning
+          data.agent.releases.unshift(newRelease);
+
+          // Write updated releases.json
+          fs.writeFileSync(releasesPath, JSON.stringify(data, null, 2));
+          console.log(`Added release ${version}`);
+          EOF
+        env:
+          VERSION: ${{ inputs.version }}
+          DATE: ${{ steps.fetch-release.outputs.date }}
+          ASSETS: ${{ steps.fetch-release.outputs.assets }}
+          SET_LATEST: ${{ inputs.set_latest }}
+
+      - name: Update install.sh with latest version
+        if: inputs.set_latest
+        run: |
+          VERSION="${{ inputs.version }}"
+          sed -i "s/LATEST_RELEASE=\"[^\"]*\"/LATEST_RELEASE=\"$VERSION\"/" install.sh
+          echo "Updated install.sh with LATEST_RELEASE=$VERSION"
+
+      - name: Generate index.html
+        run: node scripts/generate-index.js
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          git commit -m "Add agent release ${{ inputs.version }}" || echo "No changes to commit"
+          git push

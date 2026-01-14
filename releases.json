@@ -1,0 +1,124 @@
+{
+  "domain": "archive.clustereye.com",
+  "agent": {
+    "repo": "CloudNativeWorks/clustereye-agent",
+    "releases": [
+      {
+        "version": "vv1.0.11",
+        "date": "2026-01-14",
+        "latest": true,
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      },
+      {
+        "version": "vv3",
+        "date": "2025-11-19",
+        "latest": false,
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      },
+      {
+        "version": "v1.2.04101953",
+        "date": "2025-11-04",
+        "latest": false,
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      },
+      {
+        "version": "vV1.2.0410",
+        "date": "2025-11-04",
+        "latest": false,
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      },
+      {
+        "version": "v2616101459",
+        "date": "2025-09-16",
+        "latest": false,
+        "badges": ["ARM64 Support"],
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "clustereye-agent-linux-arm64",
+            "arch": "aarch64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "stack": {
+      "name": "ClusterEye Stack Install",
+      "file": "clustereye-stack-install.sh",
+      "description": "Complete stack installation for Ubuntu 24.04. Installs Kind, Helm, and deploys the full ClusterEye platform with PostgreSQL, InfluxDB, and all services.",
+      "features": [
+        "Interactive configuration prompts",
+        "Automatic Kind cluster creation (1 control-plane + 2 workers)",
+        "Helm-based deployment",
+        "SSL/HTTPS support",
+        "Auto-generated secure credentials"
+      ]
+    },
+    "agent": {
+      "name": "Agent Install Script",
+      "file": "install.sh",
+      "description": "Automated installation script for ClusterEye Agent. Supports PostgreSQL, MongoDB, and MS SQL Server monitoring with systemd service setup.",
+      "options": [
+        { "flag": "-p <platform>", "desc": "Database platform (postgres, mongo, mssql)" },
+        { "flag": "-k <key>", "desc": "License key (optional)" },
+        { "flag": "-d <dir>", "desc": "Install directory (default: /opt/clustereye)" },
+        { "flag": "-v <version>", "desc": "Specific version to install" }
+      ]
+    }
+  }
+}
