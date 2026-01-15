@@ -260,6 +260,44 @@ prompt_configuration() {
     done
     echo ""
 
+    # InfluxDB Configuration
+    echo -e "${COLOR_YELLOW}4. InfluxDB Configuration${COLOR_RESET}"
+    echo "   Use internal InfluxDB (deployed with stack) or connect to external InfluxDB?"
+    echo ""
+    while true; do
+        read -p "   Use external InfluxDB? (y/N): " EXTERNAL_INFLUX_RESPONSE
+        EXTERNAL_INFLUX_RESPONSE="${EXTERNAL_INFLUX_RESPONSE:-n}"
+        case "$EXTERNAL_INFLUX_RESPONSE" in
+            [Yy]* )
+                USE_EXTERNAL_INFLUX="true"
+                echo ""
+                while true; do
+                    read -p "   External InfluxDB URL (e.g., https://influx.example.com:8086): " EXTERNAL_INFLUX_URL
+                    if [ -n "$EXTERNAL_INFLUX_URL" ]; then
+                        break
+                    fi
+                    echo -e "   ${COLOR_RED}URL cannot be empty${COLOR_RESET}"
+                done
+                while true; do
+                    read -p "   External InfluxDB Token: " EXTERNAL_INFLUX_TOKEN
+                    if [ -n "$EXTERNAL_INFLUX_TOKEN" ]; then
+                        break
+                    fi
+                    echo -e "   ${COLOR_RED}Token cannot be empty${COLOR_RESET}"
+                done
+                read -p "   External InfluxDB Organization [clustereye]: " EXTERNAL_INFLUX_ORG
+                EXTERNAL_INFLUX_ORG="${EXTERNAL_INFLUX_ORG:-clustereye}"
+                read -p "   External InfluxDB Bucket [clustereye]: " EXTERNAL_INFLUX_BUCKET
+                EXTERNAL_INFLUX_BUCKET="${EXTERNAL_INFLUX_BUCKET:-clustereye}"
+                break;;
+            [Nn]* )
+                USE_EXTERNAL_INFLUX="false"
+                break;;
+            * ) echo -e "   ${COLOR_RED}Please answer y or n${COLOR_RESET}";;
+        esac
+    done
+    echo ""
+
     # Summary and confirmation
     echo -e "${COLOR_MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_RESET}"
     echo -e "${COLOR_CYAN}Configuration Summary:${COLOR_RESET}"
@@ -268,6 +306,14 @@ prompt_configuration() {
     echo -e "  Frontend Domain:  ${COLOR_GREEN}$FRONTEND_DOMAIN${COLOR_RESET}"
     echo -e "  API Domain:       ${COLOR_GREEN}$API_DOMAIN${COLOR_RESET}"
     echo -e "  SSL Enabled:      ${COLOR_GREEN}$SSL_ENABLED${COLOR_RESET}"
+    if [ "$USE_EXTERNAL_INFLUX" = "true" ]; then
+        echo -e "  InfluxDB:         ${COLOR_GREEN}External${COLOR_RESET}"
+        echo -e "  InfluxDB URL:     ${COLOR_GREEN}$EXTERNAL_INFLUX_URL${COLOR_RESET}"
+        echo -e "  InfluxDB Org:     ${COLOR_GREEN}$EXTERNAL_INFLUX_ORG${COLOR_RESET}"
+        echo -e "  InfluxDB Bucket:  ${COLOR_GREEN}$EXTERNAL_INFLUX_BUCKET${COLOR_RESET}"
+    else
+        echo -e "  InfluxDB:         ${COLOR_GREEN}Internal (deployed with stack)${COLOR_RESET}"
+    fi
 
     local protocol="http"
     if [ "$SSL_ENABLED" = "true" ]; then
@@ -652,27 +698,53 @@ install_clustereye_stack() {
     log_info "  Frontend Domain: $FRONTEND_DOMAIN"
     log_info "  API Domain: $API_DOMAIN"
     log_info "  SSL Enabled: $SSL_ENABLED"
+    if [ "$USE_EXTERNAL_INFLUX" = "true" ]; then
+        log_info "  InfluxDB: External ($EXTERNAL_INFLUX_URL)"
+    else
+        log_info "  InfluxDB: Internal"
+    fi
     echo
 
     log_info "Installing ClusterEye stack..."
 
-    helm install clustereye "${HELM_REPO_NAME}/${HELM_CHART_NAME}" \
-        --namespace "$CLUSTER_NAMESPACE" \
-        --create-namespace \
-        --set global.domains.frontend="$FRONTEND_DOMAIN" \
-        --set global.domains.api="$API_DOMAIN" \
-        --set global.ssl.enabled="$SSL_ENABLED" \
-        --set global.database.password="$db_password" \
-        --set global.secrets.jwtSecretKey="$jwt_secret" \
-        --set global.secrets.apiSecretKey="$api_secret" \
-        --set global.secrets.encryptionKey="$encryption_key" \
-        --set global.influxdb.token="$influx_token" || error_exit "Failed to install ClusterEye stack"
+    # Build helm install command based on InfluxDB configuration
+    if [ "$USE_EXTERNAL_INFLUX" = "true" ]; then
+        helm install clustereye "${HELM_REPO_NAME}/${HELM_CHART_NAME}" \
+            --namespace "$CLUSTER_NAMESPACE" \
+            --create-namespace \
+            --set global.domains.frontend="$FRONTEND_DOMAIN" \
+            --set global.domains.api="$API_DOMAIN" \
+            --set global.ssl.enabled="$SSL_ENABLED" \
+            --set global.database.password="$db_password" \
+            --set global.secrets.jwtSecretKey="$jwt_secret" \
+            --set global.secrets.apiSecretKey="$api_secret" \
+            --set global.secrets.encryptionKey="$encryption_key" \
+            --set influxdb.enabled=false \
+            --set global.externalInfluxDB.enabled=true \
+            --set global.externalInfluxDB.url="$EXTERNAL_INFLUX_URL" \
+            --set global.externalInfluxDB.token="$EXTERNAL_INFLUX_TOKEN" \
+            --set global.externalInfluxDB.organization="$EXTERNAL_INFLUX_ORG" \
+            --set global.externalInfluxDB.bucket="$EXTERNAL_INFLUX_BUCKET" || error_exit "Failed to install ClusterEye stack"
+    else
+        helm install clustereye "${HELM_REPO_NAME}/${HELM_CHART_NAME}" \
+            --namespace "$CLUSTER_NAMESPACE" \
+            --create-namespace \
+            --set global.domains.frontend="$FRONTEND_DOMAIN" \
+            --set global.domains.api="$API_DOMAIN" \
+            --set global.ssl.enabled="$SSL_ENABLED" \
+            --set global.database.password="$db_password" \
+            --set global.secrets.jwtSecretKey="$jwt_secret" \
+            --set global.secrets.apiSecretKey="$api_secret" \
+            --set global.secrets.encryptionKey="$encryption_key" \
+            --set global.influxdb.token="$influx_token" || error_exit "Failed to install ClusterEye stack"
+    fi
 
     log_success "ClusterEye stack installation initiated"
 
     # Save credentials to file
     local creds_file="/tmp/clustereye-credentials.txt"
-    cat > "$creds_file" <<EOF
+    if [ "$USE_EXTERNAL_INFLUX" = "true" ]; then
+        cat > "$creds_file" <<EOF
 ClusterEye Installation Credentials
 ====================================
 Generated on: $(date)
@@ -681,6 +753,31 @@ Configuration:
   Frontend URL: ${protocol}://${FRONTEND_DOMAIN}
   API URL: ${protocol}://${API_DOMAIN}
   SSL Enabled: ${SSL_ENABLED}
+  InfluxDB: External
+  InfluxDB URL: ${EXTERNAL_INFLUX_URL}
+  InfluxDB Organization: ${EXTERNAL_INFLUX_ORG}
+  InfluxDB Bucket: ${EXTERNAL_INFLUX_BUCKET}
+
+Credentials:
+  Database Password: $db_password
+  JWT Secret Key: $jwt_secret
+  API Secret Key: $api_secret
+  Encryption Key: $encryption_key
+  InfluxDB Token: (external - provided by user)
+
+IMPORTANT: Store these credentials securely and delete this file!
+EOF
+    else
+        cat > "$creds_file" <<EOF
+ClusterEye Installation Credentials
+====================================
+Generated on: $(date)
+
+Configuration:
+  Frontend URL: ${protocol}://${FRONTEND_DOMAIN}
+  API URL: ${protocol}://${API_DOMAIN}
+  SSL Enabled: ${SSL_ENABLED}
+  InfluxDB: Internal
 
 Credentials:
   Database Password: $db_password
@@ -691,6 +788,7 @@ Credentials:
 
 IMPORTANT: Store these credentials securely and delete this file!
 EOF
+    fi
 
     chmod 600 "$creds_file"
     log_warning "Credentials saved to: $creds_file"
