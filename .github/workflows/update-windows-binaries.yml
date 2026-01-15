@@ -1,0 +1,56 @@
+name: Update Windows Binaries
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run daily at 00:00 UTC to check for updates
+    - cron: '0 0 * * *'
+
+jobs:
+  update-windows:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Windows binaries from clustereye-agent
+        run: |
+          RAW_URL="https://raw.githubusercontent.com/CloudNativeWorks/clustereye-agent/main"
+
+          echo "Downloading Windows binaries from $RAW_URL"
+
+          # Create downloads directory for Windows binaries
+          mkdir -p downloads/agent/windows
+
+          # Download clustereye-agent.exe
+          echo "Downloading clustereye-agent.exe..."
+          curl -fSL -o downloads/agent/windows/clustereye-agent.exe "$RAW_URL/clustereye-agent.exe"
+
+          # Download clustereyesetup.exe
+          echo "Downloading clustereyesetup.exe..."
+          curl -fSL -o downloads/agent/windows/clustereyesetup.exe "$RAW_URL/clustereyesetup.exe"
+
+          echo "Downloaded files:"
+          ls -la downloads/agent/windows/
+
+      - name: Generate checksums
+        run: |
+          cd downloads/agent/windows
+          sha256sum clustereye-agent.exe > clustereye-agent.exe.sha256
+          sha256sum clustereyesetup.exe > clustereyesetup.exe.sha256
+
+          echo "Checksums generated:"
+          cat clustereye-agent.exe.sha256
+          cat clustereyesetup.exe.sha256
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          git diff --staged --quiet || git commit -m "Update Windows binaries from clustereye-agent"
+          git push

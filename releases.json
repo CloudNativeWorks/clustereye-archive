@@ -98,6 +98,21 @@
       }
     ]
   },
+  "windows": {
+    "description": "Windows Agent Binaries",
+    "assets": [
+      {
+        "name": "clustereye-agent.exe",
+        "description": "ClusterEye Agent for Windows",
+        "hasSha256": true
+      },
+      {
+        "name": "clustereyesetup.exe",
+        "description": "ClusterEye Setup Wizard for Windows",
+        "hasSha256": true
+      }
+    ]
+  },
   "scripts": {
     "stack": {
       "name": "ClusterEye Stack Install",

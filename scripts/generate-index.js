@@ -55,6 +55,37 @@ function generateReleaseCard(release, repo) {
                     </div>`;
 }
 
+function generateWindowsCard(windows) {
+    const assetsHtml = windows.assets.map(asset => {
+        const downloadUrl = `downloads/agent/windows/${asset.name}`;
+        const sha256Url = `downloads/agent/windows/${asset.name}.sha256`;
+
+        return `
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">${asset.name}</span>
+                                    <span class="asset-arch">${asset.description}</span>
+                                </div>
+                                <div class="asset-actions">
+                                    ${asset.hasSha256 ? `<a href="${sha256Url}" class="btn-hash" title="Download SHA256">SHA256</a>` : ''}
+                                    <a href="${downloadUrl}" class="btn-download">Download</a>
+                                </div>
+                            </div>`;
+    }).join('');
+
+    return `
+                    <div class="release-card windows-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">Windows</span>
+                                <span class="release-badge windows">Windows x64</span>
+                            </div>
+                        </div>
+                        <div class="release-assets">${assetsHtml}
+                        </div>
+                    </div>`;
+}
+
 function generateScriptCard(script, type) {
     const usageCmd = type === 'stack'
         ? `curl -sSL ${baseUrl}/${script.file} | bash`
@@ -172,8 +203,14 @@ const html = `<!DOCTYPE html>
 
             <!-- Agent Tab Content -->
             <div class="tab-content active" id="agent-content">
+                <h3 class="platform-title">Linux Releases</h3>
                 <div class="releases">
 ${data.agent.releases.map(r => generateReleaseCard(r, data.agent.repo)).join('\n')}
+                </div>
+
+                <h3 class="platform-title">Windows</h3>
+                <div class="releases">
+${generateWindowsCard(data.windows)}
                 </div>
             </div>
 
