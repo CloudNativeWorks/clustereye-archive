@@ -33,6 +33,10 @@ jobs:
           echo "Downloading clustereyesetup.exe..."
           curl -fSL -o downloads/agent/windows/clustereyesetup.exe "$RAW_URL/clustereyesetup.exe"
 
+          # Download agent.yml.example
+          echo "Downloading agent.yml.example..."
+          curl -fSL -o downloads/agent/windows/agent.yml.example "$RAW_URL/cmd/agent/agent.yml.example"
+
           echo "Downloaded files:"
           ls -la downloads/agent/windows/
 

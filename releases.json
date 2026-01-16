@@ -110,6 +110,11 @@
         "name": "clustereyesetup.exe",
         "description": "ClusterEye Setup Wizard for Windows",
         "hasSha256": true
+      },
+      {
+        "name": "agent.yml.example",
+        "description": "Example Configuration File",
+        "hasSha256": false
       }
     ]
   },
