@@ -163,26 +163,8 @@ jobs:
           ASSETS: ${{ steps.fetch-release.outputs.assets }}
           SET_LATEST: ${{ inputs.set_latest }}
 
-      - name: Update install.sh with latest version
-        if: inputs.set_latest
-        run: |
-          VERSION="${{ inputs.version }}"
-          sed -i "s/LATEST_RELEASE=\"[^\"]*\"/LATEST_RELEASE=\"$VERSION\"/" install.sh
-          echo "Updated install.sh with LATEST_RELEASE=$VERSION"
-
       - name: Generate index.html
         run: node scripts/generate-index.js
-
-      - name: Copy install.sh to downloads
-        run: |
-          # Copy install.sh to version-specific folder for agents to download
-          cp install.sh downloads/agent/${{ inputs.version }}/install.sh
-
-          # Also keep a "latest" copy at root downloads folder
-          mkdir -p downloads/agent/latest
-          cp install.sh downloads/agent/latest/install.sh
-
-          echo "install.sh copied to downloads/agent/${{ inputs.version }}/ and downloads/agent/latest/"
 
       - name: Commit and push changes
         run: |

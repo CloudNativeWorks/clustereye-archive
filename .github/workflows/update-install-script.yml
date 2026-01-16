@@ -1,0 +1,42 @@
+name: Update Install Script
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'install.sh'
+    branches:
+      - main
+
+jobs:
+  update-install:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Copy install.sh to downloads
+        run: |
+          mkdir -p downloads/agent/latest
+          cp install.sh downloads/agent/latest/install.sh
+          echo "install.sh copied to downloads/agent/latest/"
+
+      - name: Generate index.html
+        run: node scripts/generate-index.js
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          git diff --staged --quiet || git commit -m "Update install script"
+          git push
