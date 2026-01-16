@@ -1,0 +1,73 @@
+key: YOUR-LICENSE-KEY
+name: Agent
+grpc:
+  server_address: 143.198.61.173:50051
+  tls_enabled: true                      # Enable TLS for secure connection
+  insecure_skip_verify: false            # Skip TLS certificate verification (use only for development)
+postgresql:
+  host: localhost
+  user: postgres
+  pass: your-password
+  port: 5432
+  cluster: your-cluster-name
+  location: your-location
+
+  # Query Monitoring Configuration
+  query_monitoring:
+    enabled: true                           # Enable query performance monitoring
+    method: "pg_stat_statements"            # Primary collection method: "pg_stat_statements", "pg_stat_activity", or "combined"
+    fallback_methods: ["pg_stat_activity"]  # Fallback methods if primary fails
+    collection_interval_sec: 60             # Collection interval in seconds (minimum 10s)
+    max_queries_per_collection: 1000        # Maximum queries per collection cycle
+    max_query_text_length: 4000             # Maximum query text length to capture
+    cpu_threshold_percent: 80.0             # CPU threshold to throttle collection
+    memory_limit_mb: 50                     # Memory limit for query collection
+    min_execution_count: 1                  # Minimum executions to include query
+    min_duration_ms: 100.0                  # Minimum duration (ms) to include query
+    include_system_queries: false           # Include system/internal queries
+    include_adhoc_queries: true             # Include ad-hoc queries
+    pg_stat_statements_track: "all"         # pg_stat_statements tracking level: "all", "top", "none"
+    pg_stat_statements_max_size: 5000       # Max statements tracked by pg_stat_statements
+    pg_stat_activity_interval_sec: 15       # pg_stat_activity collection interval
+mongo:
+  host: localhost
+  user: admin
+  pass: your-password
+  port: 27017
+  replset: rs0
+  location: your-location
+mssql:
+  host: localhost
+  user: sa
+  pass: your-password
+  port: 1433
+  instance: MSSQLSERVER
+  database: master
+  location: your-location
+  trust_cert: true
+  windows_auth: false
+
+  # Query Monitoring Configuration
+  query_monitoring:
+    enabled: false                          # Enable query performance monitoring
+    method: "dmv"                           # Primary collection method: "query_store" or "dmv"
+    fallback_methods: ["dmv"]               # Fallback methods if primary fails
+    collection_interval_sec: 60             # Collection interval in seconds (minimum 10s)
+    max_queries_per_collection: 1000        # Maximum queries per collection cycle
+    max_query_text_length: 4000             # Maximum query text length to capture
+    cpu_threshold_percent: 80.0             # CPU threshold to throttle collection
+    memory_limit_mb: 50                     # Memory limit for query collection
+    min_execution_count: 1                  # Minimum executions to include query
+    min_duration_ms: 100.0                  # Minimum duration (ms) to include query
+    include_system_queries: false           # Include system/internal queries
+    include_adhoc_queries: true             # Include ad-hoc queries
+    query_store_flush_interval_sec: 60      # Query Store flush interval check
+    query_store_max_plans_per_query: 200    # Max plans per query for memory control
+    dmv_active_query_interval_sec: 15       # DMV active query check interval
+    dmv_cached_plan_interval_sec: 300       # DMV cached plan check interval
+
+# Logging Configuration
+logging:
+  level: "INFO"                             # Log level: DEBUG, INFO, WARNING, ERROR, FATAL
+  use_eventlog: true                        # Use Windows Event Log (Windows only)
+  use_filelog: true                         # Use file logging 
