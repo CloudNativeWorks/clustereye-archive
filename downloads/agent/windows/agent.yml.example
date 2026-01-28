@@ -71,3 +71,7 @@ logging:
   level: "INFO"                             # Log level: DEBUG, INFO, WARNING, ERROR, FATAL
   use_eventlog: true                        # Use Windows Event Log (Windows only)
   use_filelog: true                         # Use file logging 
+
+config_drift:
+  enabled: true
+  mssql_poll_interval_sec: 60
