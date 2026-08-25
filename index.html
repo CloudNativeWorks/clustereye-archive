@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClusterEye Archive - Official Downloads</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">ClusterEye<span class="logo-accent">Archive</span></div>
+            <p class="subtitle">Pre-compiled binaries and installation scripts for ClusterEye</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Quick Install Section -->
+        <section class="section">
+            <h2 class="section-title">Quick Install</h2>
+            <div class="install-cards">
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">$</span>
+                        <span class="install-label">Full Stack (Kind + Helm)</span>
+                    </div>
+                    <div class="code-block">
+                        <code id="stack-cmd">curl -sSL https://archive.clustereye.com/clustereye-stack-install.sh | bash</code>
+                        <button class="copy-btn" onclick="copyToClipboard('stack-cmd')" title="Copy to clipboard">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="install-note">Installs Kind, Helm, and the complete ClusterEye stack on Ubuntu 24.04</p>
+                </div>
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">$</span>
+                        <span class="install-label">Standalone (Bare-Metal)</span>
+                    </div>
+                    <div class="code-block">
+                        <code id="standalone-quick-cmd">curl -fsSL https://archive.clustereye.com/deploy/standalone/install.sh | sudo bash -s -- --api-version=VERSION --ui-version=VERSION --domain=YOUR_DOMAIN_OR_IP --postgres=local</code>
+                        <button class="copy-btn" onclick="copyToClipboard('standalone-quick-cmd')" title="Copy to clipboard">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="install-note">Full platform on bare-metal Linux — no Docker required</p>
+                </div>
+                <div class="install-card">
+                    <div class="install-header">
+                        <span class="install-icon">$</span>
+                        <span class="install-label">Agent Only (Linux)</span>
+                    </div>
+                    <div class="code-block">
+                        <code id="agent-cmd">curl -sSL https://archive.clustereye.com/install.sh | sudo bash -s -- -p postgres</code>
+                        <button class="copy-btn" onclick="copyToClipboard('agent-cmd')" title="Copy to clipboard">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="install-note">Platforms: <code>postgres</code>, <code>mongo</code>, <code>mssql</code></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabs Navigation -->
+        <section class="section">
+            <div class="tabs">
+                <button class="tab active" data-tab="standalone">Standalone Install</button>
+                <button class="tab" data-tab="agent">ClusterEye Agent</button>
+                <button class="tab" data-tab="scripts">Install Scripts</button>
+            </div>
+
+            <!-- Standalone Tab Content -->
+            <div class="tab-content active" id="standalone-content">
+
+                <div class="standalone-section">
+                    <div class="standalone-hero">
+                        <div class="standalone-hero-content">
+                            <div class="standalone-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Standalone Installation</h3>
+                                <p>Standalone installation for bare-metal Linux servers. Installs ClusterEye API + UI with nginx reverse proxy, without Docker or Kubernetes.</p>
+                            </div>
+                        </div>
+                        <div class="os-badges">
+                            <span class="os-badge">Ubuntu 22.04+</span>
+                            <span class="os-badge">RHEL 8/9</span>
+                            <span class="os-badge">Oracle Linux 8/9</span>
+                        </div>
+                    </div>
+
+                    <div class="standalone-install">
+                        <h4>Quick Install</h4>
+                        <div class="code-block">
+                            <code id="standalone-cmd">curl -fsSL https://archive.clustereye.com/deploy/standalone/install.sh | sudo bash -s -- --api-version=VERSION --ui-version=VERSION --domain=YOUR_DOMAIN_OR_IP --postgres=local</code>
+                            <button class="copy-btn" onclick="copyToClipboard('standalone-cmd')" title="Copy to clipboard">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                    <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="install-note">Replace <code>VERSION</code> with the desired version numbers. Defaults serve HTTPS on 443 and plaintext HTTP/h2c on 80 (for plaintext gRPC agents). API and UI versions can differ.</p>
+                    </div>
+
+                    <div class="standalone-grid">
+                        <div class="standalone-card">
+                            <h4>Components</h4>
+                            <div class="component-list">
+                                <div class="component-item">
+                                    <span class="component-name">ClusterEye API</span>
+                                    <span class="component-desc">Go binary — REST API (:8080) + gRPC (:50051)</span>
+                                </div>
+                                <div class="component-item">
+                                    <span class="component-name">ClusterEye UI</span>
+                                    <span class="component-desc">Pre-built static frontend assets</span>
+                                </div>
+                                <div class="component-item">
+                                    <span class="component-name">nginx</span>
+                                    <span class="component-desc">Reverse proxy — TLS + plaintext h2c, HTTP/2, gRPC</span>
+                                </div>
+                                <div class="component-item">
+                                    <span class="component-name">PostgreSQL</span>
+                                    <span class="component-desc">Local or external database</span>
+                                </div>
+                                <div class="component-item">
+                                    <span class="component-name">InfluxDB</span>
+                                    <span class="component-desc">Optional time-series metrics</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="standalone-card">
+                            <h4>Features</h4>
+                            <ul class="standalone-features">
+                                <li>Single-command installation (no Docker required)</li>
+                                <li>Auto-generated 10-year self-signed TLS certificate</li>
+                                <li>nginx reverse proxy — HTTPS + plaintext h2c side-by-side</li>
+                                <li>HTTP/2 and gRPC support (TLS and plaintext)</li>
+                                <li>Optional local or external PostgreSQL</li>
+                                <li>Optional local or external InfluxDB</li>
+                                <li>systemd service with security hardening</li>
+                                <li>Independent API and UI versioning</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="standalone-card">
+                        <h4>Install Options (install.sh)</h4>
+                        <div class="opt-group">
+                            <h5>Required</h5>
+                            <ul class="standalone-options">
+                                <li><code>--api-version=&lt;ver&gt;</code> — API binary version</li>
+                                <li><code>--ui-version=&lt;ver&gt;</code> — UI assets version</li>
+                                <li><code>--domain=&lt;host|ip&gt;</code> — Server domain or IP address</li>
+                            </ul>
+                        </div>
+                        <div class="opt-group">
+                            <h5>PostgreSQL</h5>
+                            <ul class="standalone-options">
+                                <li><code>--postgres=local|external</code> — Mode (default: local)</li>
+                                <li><code>--postgres-host=&lt;host&gt;</code> — External PG host</li>
+                                <li><code>--postgres-port=&lt;port&gt;</code> — External PG port (default: 5432)</li>
+                                <li><code>--postgres-user=&lt;user&gt;</code> — External PG user (default: postgres)</li>
+                                <li><code>--postgres-password=&lt;pwd&gt;</code> — External PG password</li>
+                                <li><code>--postgres-dbname=&lt;name&gt;</code> — Database name (default: clustereye)</li>
+                                <li><code>--postgres-sslmode=&lt;mode&gt;</code> — SSL mode (default: disable)</li>
+                            </ul>
+                        </div>
+                        <div class="opt-group">
+                            <h5>InfluxDB</h5>
+                            <ul class="standalone-options">
+                                <li><code>--influxdb=local|external|none</code> — Mode (default: local)</li>
+                                <li><code>--influxdb-url=&lt;url&gt;</code> — External InfluxDB URL</li>
+                                <li><code>--influxdb-token=&lt;token&gt;</code> — External InfluxDB token</li>
+                                <li><code>--influxdb-org=&lt;org&gt;</code> — Org (default: clustereye)</li>
+                                <li><code>--influxdb-bucket=&lt;bucket&gt;</code> — Bucket (default: clustereye)</li>
+                            </ul>
+                        </div>
+                        <div class="opt-group">
+                            <h5>TLS</h5>
+                            <ul class="standalone-options">
+                                <li><code>--tls=self-signed|provided</code> — Mode (default: self-signed)</li>
+                                <li><code>--cert=&lt;path&gt;</code> — Certificate file (with --tls=provided)</li>
+                                <li><code>--key=&lt;path&gt;</code> — Key file (with --tls=provided)</li>
+                            </ul>
+                        </div>
+                        <div class="opt-group">
+                            <h5>Network</h5>
+                            <ul class="standalone-options">
+                                <li><code>--port=&lt;n&gt;</code> — HTTPS port (default: 443)</li>
+                                <li><code>--http-port=&lt;n&gt;|none</code> — Plaintext HTTP/h2c port for plaintext gRPC agents; 'none' disables (default: 80)</li>
+                                <li><code>--bind-host=&lt;host&gt;</code> — Bind address (default: 0.0.0.0)</li>
+                                <li><code>--extra-hostnames=a,b,c</code> — Additional TLS SANs</li>
+                            </ul>
+                        </div>
+                        <div class="opt-group">
+                            <h5>Other</h5>
+                            <ul class="standalone-options">
+                                <li><code>--no-firewall</code> — Skip firewall configuration</li>
+                                <li><code>-h, --help</code> — Show help</li>
+                                <li><code>--version</code> — Show installer version</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="standalone-card">
+                        <h4>Upgrade (upgrade.sh)</h4>
+                        <p class="install-note">In-place upgrade of the API binary or UI assets. Config, secrets, TLS, and databases are preserved. Detects existing ports automatically from the live nginx config.</p>
+                        <div class="code-block">
+                            <code id="upgrade-cmd">curl -fsSL https://archive.clustereye.com/deploy/standalone/upgrade.sh | sudo bash -s -- --api-version=NEW --ui-version=NEW</code>
+                            <button class="copy-btn" onclick="copyToClipboard('upgrade-cmd')" title="Copy to clipboard">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                    <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="opt-group">
+                            <h5>Options</h5>
+                            <ul class="standalone-options">
+                                <li><code>--api-version=&lt;ver&gt;</code> — Upgrade API binary to this version</li>
+                                <li><code>--ui-version=&lt;ver&gt;</code> — Upgrade UI assets to this version</li>
+                                <li><code>-h, --help</code> — Show help</li>
+                            </ul>
+                        </div>
+                        <p class="install-note">At least one of <code>--api-version</code> or <code>--ui-version</code> is required. Specify both to upgrade together.</p>
+                    </div>
+                    <div class="standalone-card">
+                        <h4>Uninstall (uninstall.sh)</h4>
+                        <p class="install-note">Without flags, removes the systemd service, binary, nginx config, and journald drop-in. Configs, secrets, TLS, and databases are preserved. Use the purge flags to remove everything.</p>
+                        <div class="code-block">
+                            <code id="uninstall-cmd">sudo ./uninstall.sh --purge --purge-db --purge-influxdb --yes-i-mean-it</code>
+                            <button class="copy-btn" onclick="copyToClipboard('uninstall-cmd')" title="Copy to clipboard">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                                    <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="opt-group">
+                            <h5>Options</h5>
+                            <ul class="standalone-options">
+                                <li><code>(no flags)</code> — Remove binary, systemd unit, nginx config, journald drop-in only</li>
+                                <li><code>--purge</code> — Also remove /etc/clustereye, /var/lib/clustereye, /var/log/clustereye, web assets, user/group</li>
+                                <li><code>--purge-db</code> — Also remove local PostgreSQL packages and data (drops the clustereye DB and role first)</li>
+                                <li><code>--purge-influxdb</code> — Also remove local InfluxDB packages, data, CLI configs, repo and GPG keys</li>
+                                <li><code>--yes-i-mean-it</code> — Skip confirmation prompt</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="standalone-scripts">
+                        <div class="standalone-script-row">
+                            <div class="script-info">
+                                <span class="asset-name">install.sh</span>
+                                <span class="asset-arch">Installer</span>
+                            </div>
+                            <a href="deploy/standalone/install.sh" download class="btn-download">Download</a>
+                        </div>
+                        <div class="standalone-script-row">
+                            <div class="script-info">
+                                <span class="asset-name">upgrade.sh</span>
+                                <span class="asset-arch">Upgrader</span>
+                            </div>
+                            <a href="deploy/standalone/upgrade.sh" download class="btn-download">Download</a>
+                        </div>
+                        <div class="standalone-script-row">
+                            <div class="script-info">
+                                <span class="asset-name">uninstall.sh</span>
+                                <span class="asset-arch">Uninstaller</span>
+                            </div>
+                            <a href="deploy/standalone/uninstall.sh" download class="btn-download">Download</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Tab Content -->
+            <div class="tab-content" id="agent-content">
+                <h3 class="platform-title">Linux Releases</h3>
+                <div class="releases">
+
+                    <div class="release-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">v2.0.41</span>
+                                <span class="release-badge latest">Latest</span>
+                            </div>
+                            <span class="release-date">August 23, 2026</span>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-amd64</span>
+                                    <span class="asset-arch">x86_64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/v2.0.41/clustereye-agent-linux-amd64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/v2.0.41/clustereye-agent-linux-amd64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">config.yaml</span>
+                                    <span class="asset-arch">Example Config</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/v2.0.41/config.yaml" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="release-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">v2.0.40</span>
+                                
+                            </div>
+                            <span class="release-date">August 20, 2026</span>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-amd64</span>
+                                    <span class="asset-arch">x86_64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/v2.0.40/clustereye-agent-linux-amd64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/v2.0.40/clustereye-agent-linux-amd64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">config.yaml</span>
+                                    <span class="asset-arch">Example Config</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/v2.0.40/config.yaml" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="release-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">v2.0.39</span>
+                                
+                            </div>
+                            <span class="release-date">August 20, 2026</span>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent-linux-amd64</span>
+                                    <span class="asset-arch">x86_64</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/v2.0.39/clustereye-agent-linux-amd64.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/v2.0.39/clustereye-agent-linux-amd64" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">config.yaml</span>
+                                    <span class="asset-arch">Example Config</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/v2.0.39/config.yaml" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="platform-title">Windows</h3>
+                <div class="releases">
+
+                    <div class="release-card windows-card">
+                        <div class="release-header">
+                            <div class="release-info">
+                                <span class="release-version">Windows</span>
+                                <span class="release-badge windows">Windows x64</span>
+                            </div>
+                        </div>
+                        <div class="release-assets">
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereye-agent.exe</span>
+                                    <span class="asset-arch">ClusterEye Agent for Windows</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/windows/clustereye-agent.exe.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/windows/clustereye-agent.exe" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">clustereyesetup.exe</span>
+                                    <span class="asset-arch">ClusterEye Setup Wizard for Windows</span>
+                                </div>
+                                <div class="asset-actions">
+                                    <a href="downloads/agent/windows/clustereyesetup.exe.sha256" class="btn-hash" title="Download SHA256">SHA256</a>
+                                    <a href="downloads/agent/windows/clustereyesetup.exe" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                            <div class="asset-row">
+                                <div class="asset-info">
+                                    <span class="asset-name">agent.yml.example</span>
+                                    <span class="asset-arch">Example Configuration File</span>
+                                </div>
+                                <div class="asset-actions">
+                                    
+                                    <a href="downloads/agent/windows/agent.yml.example" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scripts Tab Content -->
+            <div class="tab-content" id="scripts-content">
+                <div class="scripts-grid">
+
+                    <div class="script-card">
+                        <div class="script-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                        </div>
+                        <h3>ClusterEye Stack Install</h3>
+                        <p>Complete stack installation for Ubuntu 24.04. Installs Kind, Helm, and deploys the full ClusterEye platform with PostgreSQL, InfluxDB, and all services.</p>
+                        <div class="script-usage">
+                            <div class="code-block small">
+                                <code>curl -sSL https://archive.clustereye.com/clustereye-stack-install.sh | bash</code>
+                            </div>
+                        </div>
+                        <div class="script-options">
+                            <h4>Features:</h4>
+                            <ul>
+                                <li>Interactive configuration prompts</li>
+                                <li>Automatic Kind cluster creation (1 control-plane + 2 workers)</li>
+                                <li>Helm-based deployment</li>
+                                <li>SSL/HTTPS support</li>
+                                <li>Auto-generated secure credentials</li>
+                            </ul>
+                        </div>
+                        <a href="clustereye-stack-install.sh" download class="btn-download full-width">Download clustereye-stack-install.sh</a>
+                    </div>
+
+                    <div class="script-card">
+                        <div class="script-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="4 17 10 11 4 5"></polyline>
+                                <line x1="12" y1="19" x2="20" y2="19"></line>
+                            </svg>
+                        </div>
+                        <h3>Agent Install Script</h3>
+                        <p>Automated installation script for ClusterEye Agent. Supports PostgreSQL, MongoDB, and MS SQL Server monitoring with systemd service setup.</p>
+                        <div class="script-usage">
+                            <div class="code-block small">
+                                <code>curl -sSL https://archive.clustereye.com/install.sh | sudo bash -s -- -p postgres</code>
+                            </div>
+                        </div>
+                        <div class="script-options">
+                            <h4>Options:</h4>
+                            <ul>
+                                <li><code>-p <platform></code> - Database platform (postgres, mongo, mssql)</li>
+                                <li><code>-k <key></code> - License key (optional)</li>
+                                <li><code>-d <dir></code> - Install directory (default: /opt/clustereye)</li>
+                                <li><code>-v <version></code> - Specific version to install</li>
+                            </ul>
+                        </div>
+                        <a href="install.sh" download class="btn-download full-width">Download install.sh</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Maintained by <a href="https://github.com/CloudNativeWorks">CloudNativeWorks</a></p>
+            <p class="footer-links">
+                <a href="https://github.com/CloudNativeWorks/clustereye-agent">GitHub</a>
+                <span class="separator">|</span>
+                <a href="https://github.com/CloudNativeWorks/clustereye-agent/issues">Issues</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + '-content').classList.add('active');
+            });
+        });
+
+        // Copy to clipboard
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector(`#${elementId}`).parentElement.querySelector('.copy-btn');
+                btn.classList.add('copied');
+                setTimeout(() => btn.classList.remove('copied'), 2000);
+            });
+        }
+    </script>
+</body>
+</html>

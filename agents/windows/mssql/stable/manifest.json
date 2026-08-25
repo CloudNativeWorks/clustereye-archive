@@ -1,0 +1,13 @@
+{
+  "version": "1.0.30",
+  "channel": "stable",
+  "packages": [
+    {
+      "platform": "windows",
+      "arch": "amd64",
+      "url": "https://archive.clustereye.com/agents/windows/mssql/stable/ClusterEyeAgent-1.0.30-win-x64.zip",
+      "sha256": "ee686c41cf4edae4a0fc5647a2baaa632c4e4416a41f48f1782fe050ed508fd0",
+      "filename": "ClusterEyeAgent-1.0.30-win-x64.zip"
+    }
+  ]
+}

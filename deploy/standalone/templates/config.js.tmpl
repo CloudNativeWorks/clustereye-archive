@@ -1,0 +1,14 @@
+window.CLUSTEREYE_CONFIG = {
+  API_URL: 'https://${CE_DISPLAY_HOST}${CE_PORT_SUFFIX}',
+  APP_NAME: 'Clustereye',
+  VERSION: '${CE_UI_VERSION}',
+  FEATURES: {
+    AI_ANALYSIS: true,
+    ANOMALY_DETECTION: true,
+    REAL_TIME_MONITORING: true
+  },
+  TIMEOUT: {
+    API_REQUEST: 30000,
+    WEBSOCKET: 5000
+  }
+};

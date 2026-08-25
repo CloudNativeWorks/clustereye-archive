@@ -1,0 +1,328 @@
+{
+  "domain": "archive.clustereye.com",
+  "agent": {
+    "repo": "CloudNativeWorks/clustereye-agent",
+    "releases": [
+      {
+        "version": "v2.0.41",
+        "date": "2026-08-23",
+        "latest": true,
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      },
+      {
+        "version": "v2.0.40",
+        "date": "2026-08-20",
+        "latest": false,
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      },
+      {
+        "version": "v2.0.39",
+        "date": "2026-08-20",
+        "latest": false,
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      }
+    ]
+  },
+  "windows": {
+    "description": "Windows Agent Binaries",
+    "assets": [
+      {
+        "name": "clustereye-agent.exe",
+        "description": "ClusterEye Agent for Windows",
+        "hasSha256": true
+      },
+      {
+        "name": "clustereyesetup.exe",
+        "description": "ClusterEye Setup Wizard for Windows",
+        "hasSha256": true
+      },
+      {
+        "name": "agent.yml.example",
+        "description": "Example Configuration File",
+        "hasSha256": false
+      }
+    ]
+  },
+  "standalone": {
+    "description": "Standalone installation for bare-metal Linux servers. Installs ClusterEye API + UI with nginx reverse proxy, without Docker or Kubernetes.",
+    "apiRepo": "CloudNativeWorks/clustereye-api",
+    "uiRepo": "CloudNativeWorks/clustereye",
+    "installerFile": "deploy/standalone/install.sh",
+    "supportedOS": [
+      "Ubuntu 22.04+",
+      "RHEL 8/9",
+      "Oracle Linux 8/9"
+    ],
+    "features": [
+      "Single-command installation (no Docker required)",
+      "Auto-generated 10-year self-signed TLS certificate",
+      "nginx reverse proxy — HTTPS + plaintext h2c side-by-side",
+      "HTTP/2 and gRPC support (TLS and plaintext)",
+      "Optional local or external PostgreSQL",
+      "Optional local or external InfluxDB",
+      "systemd service with security hardening",
+      "Independent API and UI versioning"
+    ],
+    "nginxDescription": "Reverse proxy — TLS + plaintext h2c, HTTP/2, gRPC",
+    "installNote": "Replace <code>VERSION</code> with the desired version numbers. Defaults serve HTTPS on 443 and plaintext HTTP/h2c on 80 (for plaintext gRPC agents). API and UI versions can differ.",
+    "installOptionGroups": [
+      {
+        "title": "Required",
+        "options": [
+          {
+            "flag": "--api-version=<ver>",
+            "desc": "API binary version"
+          },
+          {
+            "flag": "--ui-version=<ver>",
+            "desc": "UI assets version"
+          },
+          {
+            "flag": "--domain=<host|ip>",
+            "desc": "Server domain or IP address"
+          }
+        ]
+      },
+      {
+        "title": "PostgreSQL",
+        "options": [
+          {
+            "flag": "--postgres=local|external",
+            "desc": "Mode (default: local)"
+          },
+          {
+            "flag": "--postgres-host=<host>",
+            "desc": "External PG host"
+          },
+          {
+            "flag": "--postgres-port=<port>",
+            "desc": "External PG port (default: 5432)"
+          },
+          {
+            "flag": "--postgres-user=<user>",
+            "desc": "External PG user (default: postgres)"
+          },
+          {
+            "flag": "--postgres-password=<pwd>",
+            "desc": "External PG password"
+          },
+          {
+            "flag": "--postgres-dbname=<name>",
+            "desc": "Database name (default: clustereye)"
+          },
+          {
+            "flag": "--postgres-sslmode=<mode>",
+            "desc": "SSL mode (default: disable)"
+          }
+        ]
+      },
+      {
+        "title": "InfluxDB",
+        "options": [
+          {
+            "flag": "--influxdb=local|external|none",
+            "desc": "Mode (default: local)"
+          },
+          {
+            "flag": "--influxdb-url=<url>",
+            "desc": "External InfluxDB URL"
+          },
+          {
+            "flag": "--influxdb-token=<token>",
+            "desc": "External InfluxDB token"
+          },
+          {
+            "flag": "--influxdb-org=<org>",
+            "desc": "Org (default: clustereye)"
+          },
+          {
+            "flag": "--influxdb-bucket=<bucket>",
+            "desc": "Bucket (default: clustereye)"
+          }
+        ]
+      },
+      {
+        "title": "TLS",
+        "options": [
+          {
+            "flag": "--tls=self-signed|provided",
+            "desc": "Mode (default: self-signed)"
+          },
+          {
+            "flag": "--cert=<path>",
+            "desc": "Certificate file (with --tls=provided)"
+          },
+          {
+            "flag": "--key=<path>",
+            "desc": "Key file (with --tls=provided)"
+          }
+        ]
+      },
+      {
+        "title": "Network",
+        "options": [
+          {
+            "flag": "--port=<n>",
+            "desc": "HTTPS port (default: 443)"
+          },
+          {
+            "flag": "--http-port=<n>|none",
+            "desc": "Plaintext HTTP/h2c port for plaintext gRPC agents; 'none' disables (default: 80)"
+          },
+          {
+            "flag": "--bind-host=<host>",
+            "desc": "Bind address (default: 0.0.0.0)"
+          },
+          {
+            "flag": "--extra-hostnames=a,b,c",
+            "desc": "Additional TLS SANs"
+          }
+        ]
+      },
+      {
+        "title": "Other",
+        "options": [
+          {
+            "flag": "--no-firewall",
+            "desc": "Skip firewall configuration"
+          },
+          {
+            "flag": "-h, --help",
+            "desc": "Show help"
+          },
+          {
+            "flag": "--version",
+            "desc": "Show installer version"
+          }
+        ]
+      }
+    ],
+    "upgrade": {
+      "description": "In-place upgrade of the API binary or UI assets. Config, secrets, TLS, and databases are preserved. Detects existing ports automatically from the live nginx config.",
+      "command": "curl -fsSL {BASE_URL}/deploy/standalone/upgrade.sh | sudo bash -s -- --api-version=NEW --ui-version=NEW",
+      "note": "At least one of <code>--api-version</code> or <code>--ui-version</code> is required. Specify both to upgrade together.",
+      "options": [
+        {
+          "flag": "--api-version=<ver>",
+          "desc": "Upgrade API binary to this version"
+        },
+        {
+          "flag": "--ui-version=<ver>",
+          "desc": "Upgrade UI assets to this version"
+        },
+        {
+          "flag": "-h, --help",
+          "desc": "Show help"
+        }
+      ]
+    },
+    "uninstall": {
+      "description": "Without flags, removes the systemd service, binary, nginx config, and journald drop-in. Configs, secrets, TLS, and databases are preserved. Use the purge flags to remove everything.",
+      "command": "sudo ./uninstall.sh --purge --purge-db --purge-influxdb --yes-i-mean-it",
+      "options": [
+        {
+          "flag": "(no flags)",
+          "desc": "Remove binary, systemd unit, nginx config, journald drop-in only"
+        },
+        {
+          "flag": "--purge",
+          "desc": "Also remove /etc/clustereye, /var/lib/clustereye, /var/log/clustereye, web assets, user/group"
+        },
+        {
+          "flag": "--purge-db",
+          "desc": "Also remove local PostgreSQL packages and data (drops the clustereye DB and role first)"
+        },
+        {
+          "flag": "--purge-influxdb",
+          "desc": "Also remove local InfluxDB packages, data, CLI configs, repo and GPG keys"
+        },
+        {
+          "flag": "--yes-i-mean-it",
+          "desc": "Skip confirmation prompt"
+        }
+      ]
+    },
+    "components": {
+      "api": {
+        "name": "ClusterEye API",
+        "description": "Go binary — REST API (:8080) + gRPC (:50051)",
+        "downloadUrl": "https://github.com/CloudNativeWorks/clustereye-api/releases/download/v{VERSION}/clustereye-api"
+      },
+      "ui": {
+        "name": "ClusterEye UI",
+        "description": "Pre-built static frontend assets",
+        "downloadUrl": "https://github.com/CloudNativeWorks/clustereye/releases/download/v{VERSION}/clustereye.tar.gz"
+      }
+    }
+  },
+  "scripts": {
+    "stack": {
+      "name": "ClusterEye Stack Install",
+      "file": "clustereye-stack-install.sh",
+      "description": "Complete stack installation for Ubuntu 24.04. Installs Kind, Helm, and deploys the full ClusterEye platform with PostgreSQL, InfluxDB, and all services.",
+      "features": [
+        "Interactive configuration prompts",
+        "Automatic Kind cluster creation (1 control-plane + 2 workers)",
+        "Helm-based deployment",
+        "SSL/HTTPS support",
+        "Auto-generated secure credentials"
+      ]
+    },
+    "agent": {
+      "name": "Agent Install Script",
+      "file": "install.sh",
+      "description": "Automated installation script for ClusterEye Agent. Supports PostgreSQL, MongoDB, and MS SQL Server monitoring with systemd service setup.",
+      "options": [
+        {
+          "flag": "-p <platform>",
+          "desc": "Database platform (postgres, mongo, mssql)"
+        },
+        {
+          "flag": "-k <key>",
+          "desc": "License key (optional)"
+        },
+        {
+          "flag": "-d <dir>",
+          "desc": "Install directory (default: /opt/clustereye)"
+        },
+        {
+          "flag": "-v <version>",
+          "desc": "Specific version to install"
+        }
+      ]
+    }
+  }
+}

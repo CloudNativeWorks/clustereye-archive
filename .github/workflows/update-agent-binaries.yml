@@ -1,0 +1,197 @@
+name: Update Agent Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Agent version (e.g., 1.0.24) - leave empty for binary-only update'
+        required: false
+        type: string
+  schedule:
+    # Run daily at 00:00 UTC to check for updates
+    - cron: '0 0 * * *'
+
+# Tüm archive-push workflow'ları aynı concurrency grubunda — main üzerinde
+# eşzamanlı push yarışını ve non-fast-forward reddini önler.
+concurrency:
+  group: clustereye-archive-push
+  cancel-in-progress: false
+
+jobs:
+  update-binaries:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download Windows binaries from clustereye-agent
+        env:
+          GH_TOKEN: ${{ secrets.ARCHIVE_SYNC_TOKEN }}
+        run: |
+          REPO="CloudNativeWorks/clustereye-agent"
+          REF="main"
+
+          echo "Downloading Windows binaries from $REPO@$REF (authenticated)"
+          mkdir -p downloads/agent/windows
+
+          # clustereye-agent is private — raw.githubusercontent.com 404s for it.
+          # Fetch repo files via the authenticated Contents API; the raw media
+          # type streams the file bytes (supports binaries up to 100MB).
+          fetch() {  # $1 = repo path, $2 = output file
+            echo "Downloading $1 ..."
+            gh api "repos/${REPO}/contents/$1?ref=${REF}" \
+              -H "Accept: application/vnd.github.raw" > "$2"
+          }
+
+          fetch "clustereye-agent.exe"        downloads/agent/windows/clustereye-agent.exe
+          fetch "clustereyesetup.exe"         downloads/agent/windows/clustereyesetup.exe
+          fetch "cmd/agent/agent.yml.example" downloads/agent/windows/agent.yml.example
+
+          echo "Downloaded files:"
+          ls -la downloads/agent/windows/
+
+      - name: Generate checksums
+        run: |
+          cd downloads/agent/windows
+          sha256sum clustereye-agent.exe > clustereye-agent.exe.sha256
+          sha256sum clustereyesetup.exe > clustereyesetup.exe.sha256
+
+          echo "Checksums generated:"
+          cat clustereye-agent.exe.sha256
+          cat clustereyesetup.exe.sha256
+
+      - name: Create packages and manifests for auto-update
+        if: github.event.inputs.version != ''
+        env:
+          GH_TOKEN: ${{ secrets.ARCHIVE_SYNC_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+
+          # --- Windows ---
+          WIN_FILENAME="ClusterEyeAgent-${VERSION}-win-x64.zip"
+          WIN_DIR="agents/windows/mssql/stable"
+          mkdir -p "$WIN_DIR"
+          cd downloads/agent/windows
+          zip "../../../${WIN_DIR}/${WIN_FILENAME}" clustereye-agent.exe
+          cd ../../..
+          WIN_SHA256=$(sha256sum "${WIN_DIR}/${WIN_FILENAME}" | awk '{print $1}')
+
+          echo "Created: ${WIN_DIR}/${WIN_FILENAME}"
+          echo "SHA256: ${WIN_SHA256}"
+
+          # --- Linux ---
+          LINUX_FILENAME="ClusterEyeAgent-${VERSION}-linux-amd64.tar.gz"
+          LINUX_DIR="agents/linux/stable"
+          mkdir -p "$LINUX_DIR"
+
+          # Download Linux tar.gz from release
+          gh release download "v${VERSION}" --repo CloudNativeWorks/clustereye-agent \
+            --pattern "ClusterEyeAgent-${VERSION}-linux-amd64.tar.gz" --dir /tmp/linux-pkg || true
+
+          LINUX_SHA256=""
+          if [ -f "/tmp/linux-pkg/${LINUX_FILENAME}" ]; then
+            cp "/tmp/linux-pkg/${LINUX_FILENAME}" "${LINUX_DIR}/${LINUX_FILENAME}"
+            LINUX_SHA256=$(sha256sum "${LINUX_DIR}/${LINUX_FILENAME}" | awk '{print $1}')
+            echo "Created: ${LINUX_DIR}/${LINUX_FILENAME}"
+            echo "SHA256: ${LINUX_SHA256}"
+          else
+            echo "Linux tar.gz not found in release, skipping Linux package"
+          fi
+
+          # --- Unified manifest ---
+          MANIFEST_DIR="agents/stable"
+          mkdir -p "$MANIFEST_DIR"
+
+          if [ -n "$LINUX_SHA256" ]; then
+            jq -n \
+              --arg version "$VERSION" \
+              --arg win_url "https://archive.clustereye.com/agents/windows/mssql/stable/${WIN_FILENAME}" \
+              --arg win_sha256 "$WIN_SHA256" \
+              --arg win_filename "$WIN_FILENAME" \
+              --arg linux_url "https://archive.clustereye.com/agents/linux/stable/${LINUX_FILENAME}" \
+              --arg linux_sha256 "$LINUX_SHA256" \
+              --arg linux_filename "$LINUX_FILENAME" \
+              '{
+                version: $version,
+                channel: "stable",
+                packages: [
+                  { platform: "windows", arch: "amd64", url: $win_url, sha256: $win_sha256, filename: $win_filename },
+                  { platform: "linux", arch: "amd64", url: $linux_url, sha256: $linux_sha256, filename: $linux_filename }
+                ]
+              }' > "${MANIFEST_DIR}/manifest.json"
+          else
+            jq -n \
+              --arg version "$VERSION" \
+              --arg win_url "https://archive.clustereye.com/agents/windows/mssql/stable/${WIN_FILENAME}" \
+              --arg win_sha256 "$WIN_SHA256" \
+              --arg win_filename "$WIN_FILENAME" \
+              '{
+                version: $version,
+                channel: "stable",
+                packages: [
+                  { platform: "windows", arch: "amd64", url: $win_url, sha256: $win_sha256, filename: $win_filename }
+                ]
+              }' > "${MANIFEST_DIR}/manifest.json"
+          fi
+
+          echo "Unified manifest created:"
+          cat "${MANIFEST_DIR}/manifest.json"
+
+          # Keep Windows-only manifest for backward compat
+          jq -n \
+            --arg version "$VERSION" \
+            --arg url "https://archive.clustereye.com/agents/windows/mssql/stable/${WIN_FILENAME}" \
+            --arg sha256 "$WIN_SHA256" \
+            --arg filename "$WIN_FILENAME" \
+            '{
+              version: $version,
+              channel: "stable",
+              packages: [{ platform: "windows", arch: "amd64", url: $url, sha256: $sha256, filename: $filename }]
+            }' > "${WIN_DIR}/manifest.json"
+
+          echo "Windows manifest created:"
+          cat "${WIN_DIR}/manifest.json"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Prune old versions and regenerate index
+        # Keeps the newest 5 agent versions + cleans the stable channel so the
+        # Pages artifact stays small and deploys fast. Regenerates index.html.
+        run: bash scripts/prune-old-versions.sh 3
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            git commit -m "Update agent v${{ github.event.inputs.version }} with manifest"
+          else
+            git commit -m "Update agent binaries from clustereye-agent"
+          fi
+
+          # Push'tan önce remote'u rebase et — eşzamanlı bir workflow main'i
+          # değiştirmiş olabilir (non-fast-forward reddine karşı retry).
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push origin main; then
+              echo "Push succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Push attempt $attempt failed (remote changed), retrying in 5s..."
+            sleep 5
+          done
+          echo "Push failed after 5 attempts"
+          exit 1

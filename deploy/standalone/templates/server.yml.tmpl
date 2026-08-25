@@ -1,0 +1,49 @@
+server:
+  name: "ClusterEye"
+
+grpc:
+  address: "localhost:50051"
+
+http:
+  address: "localhost:8080"
+
+log:
+  level: "info"
+  format: "text"
+  output: "console"
+  file_path: "/var/log/clustereye/clustereye-api.log"
+  max_size: 100
+  max_backups: 5
+  max_age: 30
+  compress: true
+
+database:
+  host: "${DB_HOST}"
+  port: ${DB_PORT}
+  user: "${DB_USER}"
+  password: "${DB_PASSWORD}"
+  dbname: "${DB_NAME}"
+  sslmode: "${DB_SSLMODE}"
+
+influxdb:
+  url: "${INFLUXDB_URL}"
+  token: "${INFLUXDB_TOKEN}"
+  organization: "${INFLUXDB_ORG}"
+  bucket: "${INFLUXDB_BUCKET}"
+  enabled: ${INFLUXDB_ENABLED}
+  batch_size: 1000
+  flush_interval: 10
+
+# Per-query (high-cardinality) metric store. Values are also exported
+# via secrets.env (CLICKHOUSE_*); systemd loads it as EnvironmentFile and
+# LoadServerConfig lets env vars override the yaml. Either source works.
+clickhouse:
+  enabled: ${CLICKHOUSE_ENABLED}
+  addr: "${CLICKHOUSE_ADDR}"
+  database: "${CLICKHOUSE_DATABASE}"
+  username: "${CLICKHOUSE_USERNAME}"
+  password: "${CLICKHOUSE_PASSWORD}"
+
+cors:
+  allow_origins:
+    - "*"

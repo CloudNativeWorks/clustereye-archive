@@ -1,0 +1,4 @@
+# macOS Finder metadata. These appear just from browsing the repo, and this
+# repo is published wholesale to GitHub Pages — they should never ship.
+.DS_Store
+**/.DS_Store

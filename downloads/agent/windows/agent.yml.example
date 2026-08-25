@@ -1,0 +1,50 @@
+name: Agent
+grpc:
+  server_address: 143.198.61.173:50051
+  tls_enabled: true                      # Enable TLS for secure connection
+  insecure_skip_verify: false            # Skip TLS certificate verification (use only for development)
+postgresql:
+  host: localhost
+  user: postgres
+  pass: your-password
+  port: 5432
+  cluster: your-cluster-name
+  location: your-location
+  # query_monitoring is managed at runtime via the Settings UI
+  # (Agent Configuration page). Any query_monitoring block here is
+  # ignored by the agent, so it is no longer part of this example.
+mongo:
+  host: localhost
+  user: admin
+  pass: your-password
+  port: 27017
+  replset: rs0
+  location: your-location
+mssql:
+  host: localhost
+  user: sa
+  pass: your-password
+  port: 1433
+  instance: MSSQLSERVER
+  database: master
+  location: your-location
+  trust_cert: true
+  encrypt: ""              # TLS encryption mode: "disable" for SQL Server 2014 and older, leave empty for default behavior
+  windows_auth: false
+  # query_monitoring is managed at runtime via the Settings UI
+  # (Agent Configuration page). Any query_monitoring block here is
+  # ignored by the agent, so it is no longer part of this example.
+
+# Logging Configuration
+logging:
+  level: "INFO"                             # Log level: DEBUG, INFO, WARNING, ERROR, FATAL
+  use_eventlog: true                        # Use Windows Event Log (Windows only)
+  use_filelog: true                         # Use file logging 
+
+config_drift:
+  enabled: true
+  mssql_poll_interval_sec: 60
+
+security:
+  enabled: true
+  scan_interval_hours: 6    # Her 6 saatte bir (default)

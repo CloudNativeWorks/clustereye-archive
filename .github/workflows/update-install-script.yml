@@ -1,0 +1,66 @@
+name: Update Install Script
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'install.sh'
+    branches:
+      - main
+
+# Tüm archive-push workflow'ları aynı concurrency grubunda — main üzerinde
+# eşzamanlı push yarışını ve non-fast-forward reddini önler.
+concurrency:
+  group: clustereye-archive-push
+  cancel-in-progress: false
+
+jobs:
+  update-install:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Copy install.sh to downloads
+        run: |
+          mkdir -p downloads/agent/latest
+          cp install.sh downloads/agent/latest/install.sh
+          echo "install.sh copied to downloads/agent/latest/"
+
+      - name: Generate index.html
+        run: node scripts/generate-index.js
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Update install script"
+
+          # Push'tan önce remote'u rebase et — eşzamanlı bir workflow main'i
+          # değiştirmiş olabilir (non-fast-forward reddine karşı retry).
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push origin main; then
+              echo "Push succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Push attempt $attempt failed (remote changed), retrying in 5s..."
+            sleep 5
+          done
+          echo "Push failed after 5 attempts"
+          exit 1

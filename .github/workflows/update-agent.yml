@@ -1,0 +1,247 @@
+name: Update Agent Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Agent version to add (e.g., v1.0.12)'
+        required: true
+        type: string
+      set_latest:
+        description: 'Set as latest release'
+        required: true
+        type: boolean
+        default: true
+
+# Aynı anda yalnızca bir archive-push workflow'u çalışsın — paralel release'lerin
+# main üzerinde yarışıp non-fast-forward reddine düşmesini önler.
+concurrency:
+  group: clustereye-archive-push
+  cancel-in-progress: false
+
+jobs:
+  update-agent:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch release info from GitHub
+        id: fetch-release
+        env:
+          GH_TOKEN: ${{ secrets.ARCHIVE_SYNC_TOKEN }}
+        run: |
+          VERSION="${{ inputs.version }}"
+          REPO="CloudNativeWorks/clustereye-agent"
+
+          echo "Fetching release info for $VERSION from $REPO"
+
+          # Get release info
+          RELEASE_INFO=$(gh api repos/$REPO/releases/tags/$VERSION)
+
+          # Extract published date
+          PUBLISHED_AT=$(echo "$RELEASE_INFO" | jq -r '.published_at' | cut -d'T' -f1)
+          echo "date=$PUBLISHED_AT" >> $GITHUB_OUTPUT
+
+          # Get assets
+          ASSETS=$(echo "$RELEASE_INFO" | jq -c '[.assets[] | {name: .name, url: .browser_download_url}]')
+          echo "assets=$ASSETS" >> $GITHUB_OUTPUT
+
+          echo "Release date: $PUBLISHED_AT"
+          echo "Assets: $ASSETS"
+
+      - name: Create downloads directory
+        run: mkdir -p downloads/agent/${{ inputs.version }}
+
+      - name: Download assets
+        env:
+          GH_TOKEN: ${{ secrets.ARCHIVE_SYNC_TOKEN }}
+        run: |
+          VERSION="${{ inputs.version }}"
+          REPO="CloudNativeWorks/clustereye-agent"
+
+          echo "Downloading assets for $VERSION"
+
+          # Download each asset
+          gh release download $VERSION \
+            --repo $REPO \
+            --dir downloads/agent/$VERSION \
+            --pattern '*'
+
+          echo "Downloaded files:"
+          ls -la downloads/agent/$VERSION/
+
+      - name: Update latest binaries
+        if: inputs.set_latest
+        run: |
+          VERSION="${{ inputs.version }}"
+          SRC="downloads/agent/$VERSION"
+          DEST="downloads/agent/latest"
+          mkdir -p "$DEST"
+
+          # Mirror the platform binaries (+ checksums) into latest/ so the agent
+          # installer's RELEASE_URL=.../downloads/agent/latest resolves. The
+          # existing install.sh in latest/ is preserved (only binaries are copied).
+          shopt -s nullglob
+          for f in "$SRC"/clustereye-agent-* "$SRC"/clustereye-agent.exe; do
+            cp -f "$f" "$DEST/"
+          done
+          shopt -u nullglob
+
+          echo "latest/ now contains:"
+          ls -la "$DEST"
+
+      - name: Update auto-update packages
+        run: |
+          VERSION="${{ inputs.version }}"
+          DOWNLOADS="downloads/agent/$VERSION"
+
+          # Copy Windows ZIP if present
+          WIN_ZIP=$(ls ${DOWNLOADS}/ClusterEyeAgent-*-win-x64.zip 2>/dev/null | head -1)
+          if [ -n "$WIN_ZIP" ]; then
+            mkdir -p agents/windows/mssql/stable
+            cp "$WIN_ZIP" agents/windows/mssql/stable/
+          fi
+
+          # Copy Linux tar.gz if present
+          LINUX_TAR=$(ls ${DOWNLOADS}/ClusterEyeAgent-*-linux-amd64.tar.gz 2>/dev/null | head -1)
+          if [ -n "$LINUX_TAR" ]; then
+            mkdir -p agents/linux/stable
+            cp "$LINUX_TAR" agents/linux/stable/
+          fi
+
+          # Copy manifest.json if present (unified manifest from release)
+          if [ -f "${DOWNLOADS}/manifest.json" ]; then
+            mkdir -p agents/stable
+            cp "${DOWNLOADS}/manifest.json" agents/stable/manifest.json
+          fi
+
+      - name: Update releases.json
+        run: |
+          VERSION="${{ inputs.version }}"
+          DATE="${{ steps.fetch-release.outputs.date }}"
+          ASSETS='${{ steps.fetch-release.outputs.assets }}'
+          SET_LATEST="${{ inputs.set_latest }}"
+
+          # Create a Node.js script to update releases.json
+          node << 'EOF'
+          const fs = require('fs');
+
+          const version = process.env.VERSION;
+          const date = process.env.DATE;
+          const assets = JSON.parse(process.env.ASSETS);
+          const setLatest = process.env.SET_LATEST === 'true';
+
+          const releasesPath = './releases.json';
+          const data = JSON.parse(fs.readFileSync(releasesPath, 'utf8'));
+
+          // Check if version already exists - force update by removing old entry
+          const existingIndex = data.agent.releases.findIndex(r => r.version === version);
+          if (existingIndex !== -1) {
+            console.log(`Version ${version} already exists, force updating with fresh download...`);
+            data.agent.releases.splice(existingIndex, 1);
+          }
+
+          // Build assets array
+          const releaseAssets = [];
+          const hasArm64 = assets.some(a => a.name.includes('arm64') && !a.name.endsWith('.sha256'));
+
+          // Add amd64 binary
+          if (assets.some(a => a.name === 'clustereye-agent-linux-amd64')) {
+            releaseAssets.push({
+              name: 'clustereye-agent-linux-amd64',
+              arch: 'x86_64',
+              hasSha256: assets.some(a => a.name === 'clustereye-agent-linux-amd64.sha256')
+            });
+          }
+
+          // Add arm64 binary
+          if (hasArm64) {
+            releaseAssets.push({
+              name: 'clustereye-agent-linux-arm64',
+              arch: 'aarch64',
+              hasSha256: assets.some(a => a.name === 'clustereye-agent-linux-arm64.sha256')
+            });
+          }
+
+          // Add config.yaml
+          if (assets.some(a => a.name === 'config.yaml')) {
+            releaseAssets.push({
+              name: 'config.yaml',
+              arch: 'Example Config',
+              hasSha256: false
+            });
+          }
+
+          // Create new release entry
+          const newRelease = {
+            version: version,
+            date: date,
+            latest: setLatest,
+            assets: releaseAssets
+          };
+
+          // Add ARM64 badge if applicable
+          if (hasArm64) {
+            newRelease.badges = ['ARM64 Support'];
+          }
+
+          // If setting as latest, remove latest from others
+          if (setLatest) {
+            data.agent.releases.forEach(r => {
+              r.latest = false;
+            });
+          }
+
+          // Add new release at the beginning
+          data.agent.releases.unshift(newRelease);
+
+          // Write updated releases.json
+          fs.writeFileSync(releasesPath, JSON.stringify(data, null, 2));
+          console.log(`Added release ${version}`);
+          EOF
+        env:
+          VERSION: ${{ inputs.version }}
+          DATE: ${{ steps.fetch-release.outputs.date }}
+          ASSETS: ${{ steps.fetch-release.outputs.assets }}
+          SET_LATEST: ${{ inputs.set_latest }}
+
+      - name: Prune old versions and regenerate index
+        # Keeps the newest 5 agent versions + cleans the stable channel so the
+        # Pages artifact stays small and deploys fast. Regenerates index.html.
+        run: bash scripts/prune-old-versions.sh 3
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          git commit -m "Add agent release ${{ inputs.version }} (force update)" || {
+            echo "No changes to commit"
+            exit 0
+          }
+
+          # Push'tan önce remote'u entegre et. Başka bir release workflow'u
+          # checkout ile push arasında main'e commit atmış olabilir — bu durumda
+          # rebase edip yeniden dener (non-fast-forward reddine karşı).
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push origin main; then
+              echo "Push succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Push attempt $attempt failed (remote changed), retrying in 5s..."
+            sleep 5
+          done
+          echo "Push failed after 5 attempts"
+          exit 1
