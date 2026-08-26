@@ -337,135 +337,22 @@ EOF
 elif [ -f "$INSTALL_DIR/agent.yml" ]; then
     echo -e "${YELLOW}Mevcut agent.yml bulundu, üzerine yazılmadı.${NC}"
 else
+    # Manuel (bootstrap'sız) kurulum da artık minimal yazar. Motor bağlantı
+    # blokları agent.yml'a AİT DEĞİL: ClusterEye arayüzünden (Add Agent
+    # sihirbazı ya da Settings > Agent Connections) girilir, API'de saklanır
+    # ve agent şifreli yerel önbelleğine (agent-conn.enc) aynalar.
     cat > "$INSTALL_DIR/agent.yml" << 'EOF'
 name: Agent
 grpc:
-  server_address: 10.1.242.65:30000
-  tls_enabled: false              # Enable TLS for secure connection
-  insecure_skip_verify: false     # Skip TLS certificate verification (use only for development)
-postgresql:
-  host: 10.1.X.X
-  user:
-  pass:
-  port: 5432
-  cluster: 99d4XXXX
-  location: istanbul
-  # Query Monitoring Configuration
-  query_monitoring:
-    enabled: true                           # Enable query performance monitoring
-    method: "pg_stat_statements"            # Primary collection method: "pg_stat_statements", "pg_stat_activity", or "combined"
-    fallback_methods: ["pg_stat_activity"]  # Fallback methods if primary fails
-    collection_interval_sec: 60             # Collection interval in seconds (minimum 10s)
-    max_queries_per_collection: 1000        # Maximum queries per collection cycle
-    max_query_text_length: 4000             # Maximum query text length to capture
-    cpu_threshold_percent: 80.0             # CPU threshold to throttle collection
-    memory_limit_mb: 50                     # Memory limit for query collection
-    min_execution_count: 1                  # Minimum executions to include query
-    min_duration_ms: 100.0                  # Minimum duration (ms) to include query
-    include_system_queries: false           # Include system/internal queries
-    include_adhoc_queries: true             # Include ad-hoc queries
-    pg_stat_statements_track: "all"         # pg_stat_statements tracking level: "all", "top", "none"
-    pg_stat_statements_max_size: 5000       # Max statements tracked by pg_stat_statements
-    pg_stat_activity_interval_sec: 15       # pg_stat_activity collection interval
-oracle:
-  enabled: false                  # Oracle koleksiyonunu açmak için true yapın
-  driver: "go-ora"                # "go-ora" (default) | "godror" (build-tag gerektirir)
-  mode: "cdb_root"                # "cdb_root" (default) | "pdb_service"
-  host: 10.1.X.X
-  port: "1521"
-  service_name:                   # service_name veya sid'den biri zorunludur
-  sid:
-  container_name:                 # Opsiyonel (PDB adı)
-  user:
-  pass:
-  connect_as_role:                # "" | "SYSDBA" | "SYSOPER"
-  cluster: 99d4XXXX
-  location: istanbul
-  tls:
-    enabled: false
-    wallet_path:
-  limits:
-    max_top_sql: 25
-    max_wait_events: 15
-    max_session_buckets: 10
-    enable_active_sessions_snapshot: false
-    max_blocking_sessions: 20
-    max_temp_rows: 10
-    max_pdbs: 50
-  collectors:
-    redo: true
-    buffer_cache: true
-    parse: true
-    resource_limits: true
-    blocking: true
-    temp_usage: true
-    undo: true
-    io: true
-    pga: true
-    dataguard: true
-    pdb: true
-    sql_wait_profile: true
-    redo_pressure: true
-    segment_io: true
-    library_cache: true
-    workarea: true
-    latch_mutex: true
-    dbwr_pressure: true
-    tables: true
-  privacy:
-    collect_sql_text: true
-    sql_text_max_length: 1000
-    strip_bind_values: true
-    sanitize_control: true
-  query_monitoring:
-    enabled: true
-    collection_interval_sec: 60
-  tuning:
-    enabled: false                # SQL Tuning / Object Insights opt-in
-    interval_seconds: 0
-    max_sql_candidates: 0
-    max_objects: 0
-    max_indexes: 0
-    sql_text_max_length: 0
-    enable_predicate_parsing: false
-    enable_index_recommendations: false
-    min_table_rows_for_index_recommendation: 0
-    min_buffer_gets_per_exec: 0
-    min_disk_reads_per_exec: 0
-    stale_stats_days: 0
-    hot_physical_reads: 0
-    hot_buffer_busy_waits: 0
-    hot_itl_waits: 0
-    plan_instability_min_execs: 0
-    plan_instability_ratio: 0
-    bind_literal_min_distinct: 0
-mysql:
-  # MySQL Connection Settings. Leave blank when the agent is bootstrapped
-  # via the UI — the UI's onboarding flow pushes host/user/pass down via
-  # the DatabaseConfigRequest gRPC command after registration.
-  host: 10.1.X.X
-  port: "3306"
-  user:
-  pass:
-  database:                       # optional; leave empty for server-level metrics
-  cluster: 99d4XXXX
-  location: istanbul
-  ssl_mode:                       # one of: "true" | "false" | "skip-verify" | "preferred"
-  # Optional replication user (for replica monitoring). If empty, the
-  # main monitoring user is used for replication probes too.
-  replication_user:
-  replication_password:
-# Logging Configuration
+  # ClusterEye API'nizin gRPC adresi — kurulumdan sonra düzenleyin.
+  server_address: CHANGE_ME:50051
+  tls_enabled: false
+  insecure_skip_verify: false
 logging:
-  level: "INFO"         # Log level: DEBUG, INFO, WARNING, ERROR, FATAL
-  use_eventlog: true    # Use Windows Event Log (Windows only)
-  use_filelog: true     # Use file logging
-config_drift:
-  enabled: true
-  mssql_poll_interval_sec: 60
+  level: "INFO"
 security:
   enabled: true
-  scan_interval_hours: 6  # Her 6 saatte bir (default)
+  scan_interval_hours: 6
 EOF
 fi
 
