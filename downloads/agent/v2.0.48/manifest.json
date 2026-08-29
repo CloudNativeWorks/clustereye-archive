@@ -1,0 +1,20 @@
+{
+  "version": "2.0.48",
+  "channel": "stable",
+  "packages": [
+    {
+      "platform": "windows",
+      "arch": "amd64",
+      "url": "https://archive.clustereye.com/agents/windows/mssql/stable/ClusterEyeAgent-2.0.48-win-x64.zip",
+      "sha256": "ac16891ee787c5270661d7a4b3fb30d30284594c3e303ad2af4d83339daba9be",
+      "filename": "ClusterEyeAgent-2.0.48-win-x64.zip"
+    },
+    {
+      "platform": "linux",
+      "arch": "amd64",
+      "url": "https://archive.clustereye.com/agents/linux/stable/ClusterEyeAgent-2.0.48-linux-amd64.tar.gz",
+      "sha256": "6251129d045d0b5ba6b4d0c16a04d29c36d63327daa5311decb2ba04f88cae41",
+      "filename": "ClusterEyeAgent-2.0.48-linux-amd64.tar.gz"
+    }
+  ]
+}
