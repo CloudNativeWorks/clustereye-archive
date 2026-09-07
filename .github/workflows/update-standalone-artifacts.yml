@@ -60,7 +60,25 @@ jobs:
             --pattern clustereye-api \
             --dir "$DEST" --clobber
 
-          ( cd "$DEST" && sha256sum clustereye-api > clustereye-api.sha256 )
+          # The uncompressed binary is >100MB and git (and therefore GitHub
+          # Pages) rejects it. Mirror it gzipped instead; lib/download.sh
+          # fetches the .gz and decompresses on the installer side.
+          #   clustereye-api.gz         — what installers download
+          #   clustereye-api.gz.sha256  — checksum of the compressed file
+          #   clustereye-api.sha256     — checksum of the decompressed binary
+          ( cd "$DEST" \
+            && sha256sum clustereye-api > clustereye-api.sha256 \
+            && gzip -9 -f clustereye-api \
+            && sha256sum clustereye-api.gz > clustereye-api.gz.sha256 )
+
+          # Guard: a future binary that stays >100MB even compressed would be
+          # rejected by the push below with a confusing git error.
+          GZ_BYTES=$(wc -c < "$DEST/clustereye-api.gz")
+          if [ "$GZ_BYTES" -gt 99000000 ]; then
+            echo "::error::clustereye-api.gz is ${GZ_BYTES} bytes, over GitHub's 100MB file limit"
+            exit 1
+          fi
+
           echo "Mirrored:"
           ls -la "$DEST"
 
