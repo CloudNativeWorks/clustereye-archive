@@ -1,0 +1,33 @@
+name: Agent
+grpc:
+  server_address: 192.168.64.2:50051
+postgresql:
+  host: 192.168.64.2
+  user: postgres
+  pass: 123
+  port: 5432
+  cluster: postgresnew
+  location: istanbul
+  replication_user: replicator
+  replication_password: replica
+mongo:
+  host: localhost
+  user: admin
+  pass: 123
+  port: 27017
+  replset: rs0
+  location: istanbul
+mssql:
+  host: localhost
+  user: sa
+  pass: YourPassword123!
+  port: 1433
+  instance: MSSQLSERVER
+  database: master
+  location: istanbul
+  trust_cert: true
+  windows_auth: false
+logging:
+  level: "INFO"
+  use_eventlog: true
+  use_filelog: true
