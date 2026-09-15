@@ -4,9 +4,26 @@
     "repo": "CloudNativeWorks/clustereye-agent",
     "releases": [
       {
+        "version": "v2.0.55",
+        "date": "2026-09-15",
+        "latest": true,
+        "assets": [
+          {
+            "name": "clustereye-agent-linux-amd64",
+            "arch": "x86_64",
+            "hasSha256": true
+          },
+          {
+            "name": "config.yaml",
+            "arch": "Example Config",
+            "hasSha256": false
+          }
+        ]
+      },
+      {
         "version": "v2.0.54",
         "date": "2026-09-14",
-        "latest": true,
+        "latest": false,
         "assets": [
           {
             "name": "clustereye-agent-linux-amd64",
@@ -23,23 +40,6 @@
       {
         "version": "v2.0.53",
         "date": "2026-09-12",
-        "latest": false,
-        "assets": [
-          {
-            "name": "clustereye-agent-linux-amd64",
-            "arch": "x86_64",
-            "hasSha256": true
-          },
-          {
-            "name": "config.yaml",
-            "arch": "Example Config",
-            "hasSha256": false
-          }
-        ]
-      },
-      {
-        "version": "v2.0.51",
-        "date": "2026-09-08",
         "latest": false,
         "assets": [
           {
