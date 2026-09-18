@@ -122,6 +122,10 @@ if ($PackageUrl -or $LocalPackage) {
     # Package mode. The zip carries ClusterEyeAgentUpdater.exe alongside the
     # agent; installing only the bare exe left every agent unable to self-update,
     # because the updater is looked up in the install dir at update time.
+    # It also carries clustereye-dam.exe, the isolated Database Activity
+    # Monitoring worker; the agent looks for it next to itself and only runs
+    # it when DAM is enabled and licensed. Bare-exe installs report DAM as
+    # unavailable ("worker binary not found") rather than failing.
     $stage = Join-Path $env:TEMP ("ce-agent-" + [guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory -Path $stage -Force | Out-Null
     $pkg = Join-Path $stage "agent-package.zip"
