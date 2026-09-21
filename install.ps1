@@ -230,12 +230,35 @@ $ymlPath = Join-Path $InstallDir "agent.yml"
 Write-Ok "agent.yml written (database connection details set later from the UI)"
 
 # --- 5. Install and start the Windows service ---
+# Anything a native command writes to stderr becomes an ErrorRecord, which
+# $ErrorActionPreference = "Stop" turns into a terminating error. The agent
+# logs routine startup lines there, so every invocation below runs with the
+# preference relaxed; exit codes are what actually decide success.
+function Invoke-Native {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [string[]]$Arguments = @(),
+        [switch]$Quiet
+    )
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        if ($Quiet) {
+            & $FilePath @Arguments 2>&1 | Out-Null
+        } else {
+            & $FilePath @Arguments 2>&1 | ForEach-Object { Write-Host "    $_" }
+        }
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
 Write-Step "4. Installing Windows service..."
 if ($existing) {
-    & $ExePath -service uninstall 2>$null
+    Invoke-Native -FilePath $ExePath -Arguments @("-service", "uninstall") -Quiet
     Start-Sleep -Seconds 2
 }
-& $ExePath -platform $Platform -service install
+Invoke-Native -FilePath $ExePath -Arguments @("-platform", $Platform, "-service", "install")
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Service installation failed."
     exit 1
@@ -244,9 +267,9 @@ if ($LASTEXITCODE -ne 0) {
 # Auto-restart on failure: after a config push the agent exits with a non-zero
 # code on purpose; the service manager must bring it back up. Without this the
 # service stays Stopped after every database configuration change.
-& sc.exe failure $ServiceName reset= 86400 actions= restart/5000/restart/5000/restart/5000 | Out-Null
+Invoke-Native -FilePath "sc.exe" -Arguments @("failure", $ServiceName, "reset=", "86400", "actions=", "restart/5000/restart/5000/restart/5000") -Quiet
 
-& $ExePath -platform $Platform -service start
+Invoke-Native -FilePath $ExePath -Arguments @("-platform", $Platform, "-service", "start")
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Service failed to start."
     exit 1
