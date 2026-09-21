@@ -53,6 +53,8 @@ verify::print_summary() {
   local port="${CE_PORT:-443}"
   local http_port="${CE_HTTP_PORT:-80}"
   local display_host="${CE_DOMAIN:-<your-server-ip>}"
+  local initial_admin_password
+  initial_admin_password=$(grep '^CLUSTEREYE_INITIAL_ADMIN_PASSWORD=' /etc/clustereye/secrets.env 2>/dev/null | cut -d= -f2- || true)
 
   local port_suffix=""
   if [[ "$port" != "443" ]]; then
@@ -81,6 +83,11 @@ ${BOLD}Access URLs:${NC}
   UI:    https://${display_host}${port_suffix}
   API:   https://${display_host}${port_suffix}  (header: CEFE: Yes)
   gRPC:  https://${display_host}${port_suffix}  (agent connections, same port)${plain_section}
+
+${BOLD}Initial Login:${NC}
+  Username: admin
+  Password: ${initial_admin_password:-see CLUSTEREYE_INITIAL_ADMIN_PASSWORD in /etc/clustereye/secrets.env}
+  (You will be asked to change it at first login.)
 
 ${BOLD}Versions:${NC}
   API:   v${CE_API_VERSION}

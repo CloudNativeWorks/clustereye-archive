@@ -29,6 +29,12 @@ JWT_SECRET_KEY=${jwt_secret}
 API_SECRET_KEY=${api_secret}
 ENCRYPTION_KEY=${encryption_key}
 
+# First login: user "admin" with this password (must be changed at first login)
+CLUSTEREYE_INITIAL_ADMIN_PASSWORD=$(rand_hex 12)
+
+# Agents must present their per-agent secret (fresh installs have no legacy agents)
+CLUSTEREYE_ENFORCE_AGENT_AUTH=true
+
 # Database connection
 DB_HOST=
 DB_PORT=5432

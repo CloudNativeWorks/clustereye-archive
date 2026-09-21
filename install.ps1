@@ -126,7 +126,13 @@ if ($PackageUrl -or $LocalPackage) {
     # Monitoring worker; the agent looks for it next to itself and only runs
     # it when DAM is enabled and licensed. Bare-exe installs report DAM as
     # unavailable ("worker binary not found") rather than failing.
-    $stage = Join-Path $env:TEMP ("ce-agent-" + [guid]::NewGuid().ToString("N"))
+    # $env:TEMP can be an 8.3 short path (long or domain user names); Remove-Item
+    # -Recurse throws a terminating PSArgumentException on those, which under
+    # $ErrorActionPreference = "Stop" would abort the install after extraction.
+    # Expand it to the full path and delete via .NET, which handles both.
+    $tempRoot = $env:TEMP
+    try { $tempRoot = (Get-Item -LiteralPath $env:TEMP).FullName } catch { }
+    $stage = Join-Path $tempRoot ("ce-agent-" + [guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory -Path $stage -Force | Out-Null
     $pkg = Join-Path $stage "agent-package.zip"
     try {
@@ -159,7 +165,8 @@ if ($PackageUrl -or $LocalPackage) {
         }
         Write-Ok "Agent package installed$(if ($Version) { " ($Version)" })"
     } finally {
-        Remove-Item -Path $stage -Recurse -Force -ErrorAction SilentlyContinue
+        # Cleanup must never fail the install: the agent is already in place.
+        try { [System.IO.Directory]::Delete($stage, $true) } catch { }
     }
 } elseif ($LocalBinary) {
     Write-Step "2. Copying local agent binary..."

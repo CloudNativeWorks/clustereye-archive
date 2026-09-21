@@ -98,6 +98,27 @@ log::step "Upgrading ClusterEye"
 
 # Upgrade API binary
 if [[ -n "$CE_API_VERSION" ]]; then
+  # The API refuses to start without a strong JWT_SECRET_KEY; check before
+  # stopping it so a server with legacy keys is not left half-upgraded.
+  secrets_file=/etc/clustereye/secrets.env
+  [[ -f "$secrets_file" ]] || die "$secrets_file not found — see the ENCRYPTION_KEY rotation steps before upgrading"
+  jwt=$(grep '^JWT_SECRET_KEY=' "$secrets_file" | cut -d= -f2- || true)
+  if [[ ${#jwt} -lt 32 || "$jwt" == "clustereye-default-secret-key-change-this-in-production-2024" ]]; then
+    log::warn "JWT_SECRET_KEY missing or weak — generating a new one (users will need to log in again)"
+    new_jwt=$(rand_hex 32)
+    if grep -q '^JWT_SECRET_KEY=' "$secrets_file"; then
+      sed -i "s|^JWT_SECRET_KEY=.*|JWT_SECRET_KEY=${new_jwt}|" "$secrets_file"
+    else
+      printf '\nJWT_SECRET_KEY=%s\n' "$new_jwt" >> "$secrets_file"
+    fi
+  fi
+  enc=$(grep '^ENCRYPTION_KEY=' "$secrets_file" | cut -d= -f2- || true)
+  if [[ -z "$enc" || "$enc" == 'clustereye-default-32byte-key!!!' ]]; then
+    log::warn "ENCRYPTION_KEY is missing or the public default — stored credentials are not protected."
+    log::warn "After the upgrade: stop the API, set a new 32-char ENCRYPTION_KEY in $secrets_file, then run"
+    log::warn "  ENCRYPTION_KEY_OLD='clustereye-default-32byte-key!!!' ENCRYPTION_KEY=<new> clustereye-api rotate-encryption-key --apply"
+  fi
+
   log::info "Stopping clustereye-api service..."
   systemctl stop clustereye-api
 
