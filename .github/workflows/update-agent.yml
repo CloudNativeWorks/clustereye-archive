@@ -111,6 +111,8 @@ jobs:
           if [ -n "$WIN_ZIP" ]; then
             mkdir -p agents/windows/mssql/stable
             cp "$WIN_ZIP" agents/windows/mssql/stable/
+            # The updater refuses a package without its release signature.
+            [ -f "${WIN_ZIP}.sig" ] && cp "${WIN_ZIP}.sig" agents/windows/mssql/stable/
           fi
 
           # Copy Linux tar.gz if present
@@ -118,6 +120,7 @@ jobs:
           if [ -n "$LINUX_TAR" ]; then
             mkdir -p agents/linux/stable
             cp "$LINUX_TAR" agents/linux/stable/
+            [ -f "${LINUX_TAR}.sig" ] && cp "${LINUX_TAR}.sig" agents/linux/stable/
           fi
 
           # Copy manifest.json if present (unified manifest from release)
