@@ -9,6 +9,7 @@
 
 readonly CH_VERSION_PIN="24.8"   # LTS line — leave the .x patch open
 readonly CH_REPO_KEY_ID="3E4AD4719DDE9A38"
+readonly CH_REPO_KEY_URL="https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key"
 readonly CH_USER_XML="/etc/clickhouse-server/users.d/clustereye.xml"
 
 clickhouse::setup() {
@@ -33,16 +34,43 @@ clickhouse::_install_local() {
 # binary OpenPGP format. Receiving directly with --keyring on GnuPG >= 2.4
 # (Ubuntu 26.04) creates a keybox-format file that apt rejects with
 # "unsupported filetype" — so pull into a temp GNUPGHOME and export instead.
+#
+# Source order: HTTPS from packages.clickhouse.com first (same host as the repo,
+# honors http(s)_proxy, no dirmngr), then public keyservers as a fallback —
+# dirmngr ignores proxy env vars and hkps is often firewalled on customer hosts.
+# The downloaded key is only accepted if it actually contains $key_id, so a
+# rotated key reported via NO_PUBKEY still falls through to the keyservers.
 clickhouse::_fetch_repo_key() {
-  local key_id="$1" gpgtmp fetched=0 ks
+  local key_id="$1" gpgtmp fetched=0 ks err
   gpgtmp=$(mktemp -d)
   chmod 700 "$gpgtmp"
-  for ks in keyserver.ubuntu.com keys.openpgp.org; do
-    if GNUPGHOME="$gpgtmp" gpg --batch \
-        --keyserver "hkps://${ks}" --recv-keys "$key_id" 2>/dev/null; then
-      fetched=1; break
-    fi
-  done
+  err="$gpgtmp/err"
+
+  if ! curl -fsSL --retry 2 --connect-timeout 10 --max-time 60 \
+        "$CH_REPO_KEY_URL" -o "$gpgtmp/key.asc" 2>"$err"; then
+    log::warn "Could not download $CH_REPO_KEY_URL:"
+    sed 's/^/        /' "$err" >&2
+  elif ! GNUPGHOME="$gpgtmp" gpg --batch --import "$gpgtmp/key.asc" 2>"$err"; then
+    log::warn "Could not import key from $CH_REPO_KEY_URL:"
+    sed 's/^/        /' "$err" >&2
+  elif GNUPGHOME="$gpgtmp" gpg --batch --list-keys "$key_id" &>/dev/null; then
+    fetched=1
+  else
+    log::warn "Key from $CH_REPO_KEY_URL does not contain $key_id"
+  fi
+
+  if [[ "$fetched" -eq 0 ]]; then
+    log::warn "Trying public keyservers for ClickHouse key $key_id"
+    for ks in keyserver.ubuntu.com keys.openpgp.org; do
+      if GNUPGHOME="$gpgtmp" gpg --batch \
+          --keyserver "hkps://${ks}" --recv-keys "$key_id" 2>"$err"; then
+        fetched=1; break
+      fi
+      log::warn "Keyserver ${ks} failed:"
+      sed 's/^/        /' "$err" >&2
+    done
+  fi
+
   if [[ "$fetched" -eq 1 ]]; then
     GNUPGHOME="$gpgtmp" gpg --batch --export "$key_id" \
       > /usr/share/keyrings/clickhouse-keyring.gpg
@@ -60,11 +88,11 @@ clickhouse::_ensure_package_installed() {
 
   case "$CE_OS_FAMILY" in
     debian)
-      apt-get install -y -qq apt-transport-https ca-certificates dirmngr curl >/dev/null
+      apt-get install -y -qq apt-transport-https ca-certificates gnupg dirmngr curl >/dev/null
 
       if [[ ! -s /usr/share/keyrings/clickhouse-keyring.gpg ]]; then
         clickhouse::_fetch_repo_key "$CH_REPO_KEY_ID" \
-          || die "ClickHouse repo signing key fetch failed (keyserver reachable?)"
+          || die "ClickHouse repo signing key fetch failed (packages.clickhouse.com and keyservers unreachable?)"
       fi
 
       echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] https://packages.clickhouse.com/deb stable main" \
