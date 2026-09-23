@@ -30,6 +30,7 @@ CE_INFLUXDB_URL=""
 CE_INFLUXDB_TOKEN=""
 CE_INFLUXDB_ORG="clustereye"
 CE_INFLUXDB_BUCKET="clustereye"
+CE_INFLUXDB_RESET="0"
 CE_CLICKHOUSE="local"
 CE_CLICKHOUSE_HOST=""
 CE_CLICKHOUSE_PORT="9000"
@@ -72,6 +73,8 @@ InfluxDB:
   --influxdb-token=<token>         External InfluxDB token
   --influxdb-org=<org>             InfluxDB org (default: clustereye)
   --influxdb-bucket=<bucket>       InfluxDB bucket (default: clustereye)
+  --influxdb-reset                 Local InfluxDB: if no working token is found, move
+                                   existing data aside and re-initialize (default: abort)
 
 ClickHouse (per-query metric store):
   --clickhouse=local|external      ClickHouse mode (default: local)
@@ -132,6 +135,7 @@ parse_args() {
       --influxdb-token=*)    CE_INFLUXDB_TOKEN="${1#*=}" ;;
       --influxdb-org=*)      CE_INFLUXDB_ORG="${1#*=}" ;;
       --influxdb-bucket=*)   CE_INFLUXDB_BUCKET="${1#*=}" ;;
+      --influxdb-reset)      CE_INFLUXDB_RESET="1" ;;
       --clickhouse=*)        CE_CLICKHOUSE="${1#*=}" ;;
       --clickhouse-host=*)   CE_CLICKHOUSE_HOST="${1#*=}" ;;
       --clickhouse-port=*)   CE_CLICKHOUSE_PORT="${1#*=}" ;;
@@ -225,7 +229,7 @@ main() {
   export CE_API_VERSION CE_UI_VERSION
   export CE_POSTGRES CE_POSTGRES_HOST CE_POSTGRES_PORT CE_POSTGRES_USER
   export CE_POSTGRES_PASSWORD CE_POSTGRES_DBNAME CE_POSTGRES_SSLMODE
-  export CE_INFLUXDB CE_INFLUXDB_URL CE_INFLUXDB_TOKEN CE_INFLUXDB_ORG CE_INFLUXDB_BUCKET
+  export CE_INFLUXDB CE_INFLUXDB_URL CE_INFLUXDB_TOKEN CE_INFLUXDB_ORG CE_INFLUXDB_BUCKET CE_INFLUXDB_RESET
   export CE_CLICKHOUSE CE_CLICKHOUSE_HOST CE_CLICKHOUSE_PORT CE_CLICKHOUSE_USER CE_CLICKHOUSE_PASSWORD CE_CLICKHOUSE_DATABASE
   export CE_TLS CE_TLS_CERT CE_TLS_KEY
   export CE_DOMAIN CE_PORT CE_HTTP_PORT CE_GRPC_PORT CE_BIND_HOST CE_EXTRA_HOSTNAMES CE_NO_FIREWALL
