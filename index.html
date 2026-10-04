@@ -77,6 +77,7 @@
                 <button class="tab active" data-tab="standalone">Standalone Install</button>
                 <button class="tab" data-tab="agent">ClusterEye Agent</button>
                 <button class="tab" data-tab="scripts">Install Scripts</button>
+                <button class="tab" data-tab="eye-os">ClusterEye OS</button>
             </div>
 
             <!-- Standalone Tab Content -->
@@ -432,6 +433,78 @@
                                 <div class="asset-actions">
                                     
                                     <a href="downloads/agent/windows/agent.yml.example" class="btn-download">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ClusterEye OS Tab Content -->
+            <div class="tab-content" id="eye-os-content">
+
+                <div class="standalone-section">
+                    <div class="standalone-hero">
+                        <div class="standalone-hero-content">
+                            <h3>ClusterEye OS</h3>
+                            <p>The ClusterEye server as a ready system image: PostgreSQL, ClickHouse and InfluxDB
+                            built in (each can be external), set up from its console, the OVA wizard or cloud-init,
+                            upgraded in place with automatic rollback.</p>
+                        </div>
+                    </div>
+                    <div class="standalone-install">
+                        <div class="code-block">
+                            <code id="eye-os-verify">gpg --import eye-release-signing.asc &amp;&amp; gpg --verify SHA256SUMS.asc SHA256SUMS &amp;&amp; sha256sum -c --ignore-missing SHA256SUMS</code>
+                            <button class="copy-btn" onclick="copyToClipboard('eye-os-verify')" title="Copy to clipboard">Copy</button>
+                        </div>
+                        <p class="component-desc">Release key fingerprint: 447C FB9B D464 F747 8661 1715 7E12 CCDF EDF9 400F</p>
+                    </div>
+                    <div class="standalone-grid">
+                        <div class="standalone-card">
+                            <h4>ClusterEye OS v0.1.0 (latest)</h4>
+                            <p class="component-desc">October 4, 2026 · clustereye-api v1.6.15 · clustereye-ui v1.6.17</p>
+                            <div class="standalone-scripts">
+                                <div class="standalone-script-row">
+                                    <div>
+                                        <span class="component-name">eye-os-0.1.0.iso</span>
+                                        <span class="component-desc">Bare metal and any hypervisor (BIOS + UEFI)</span>
+                                    </div>
+                                    <a href="https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/eye-os-0.1.0.iso" class="btn-download">Download</a>
+                                </div>
+                                <div class="standalone-script-row">
+                                    <div>
+                                        <span class="component-name">eye-os-0.1.0.ova</span>
+                                        <span class="component-desc">VMware vSphere / Workstation</span>
+                                    </div>
+                                    <a href="https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/eye-os-0.1.0.ova" class="btn-download">Download</a>
+                                </div>
+                                <div class="standalone-script-row">
+                                    <div>
+                                        <span class="component-name">eye-os_0.1.0.qcow2</span>
+                                        <span class="component-desc">KVM, Proxmox, OpenStack (qcow2)</span>
+                                    </div>
+                                    <a href="https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/eye-os_0.1.0.qcow2" class="btn-download">Download</a>
+                                </div>
+                                <div class="standalone-script-row">
+                                    <div>
+                                        <span class="component-name">eye-os_0.1.0.update.tar</span>
+                                        <span class="component-desc">In-place upgrade of an existing server</span>
+                                    </div>
+                                    <a href="https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/eye-os_0.1.0.update.tar" class="btn-download">Download</a>
+                                </div>
+                                <div class="standalone-script-row">
+                                    <div>
+                                        <span class="component-name">SHA256SUMS</span>
+                                        <span class="component-desc">SHA256SUMS</span>
+                                    </div>
+                                    <a href="https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/SHA256SUMS" class="btn-download">Download</a>
+                                </div>
+                                <div class="standalone-script-row">
+                                    <div>
+                                        <span class="component-name">SHA256SUMS.asc</span>
+                                        <span class="component-desc">Signature of SHA256SUMS</span>
+                                    </div>
+                                    <a href="https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/SHA256SUMS.asc" class="btn-download">Download</a>
                                 </div>
                             </div>
                         </div>

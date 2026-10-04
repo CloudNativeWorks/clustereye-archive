@@ -1,5 +1,60 @@
 {
-  "eye_os_releases": [],
+  "eye_os_releases": [
+    {
+      "version": "v0.1.0",
+      "date": "2026-10-04T11:42:45Z",
+      "api_version": "v1.6.15",
+      "ui_version": "v1.6.17",
+      "files": [
+        {
+          "name": "eye-os-0.1.0.iso",
+          "type": "iso",
+          "arch": "linux-amd64",
+          "description": "ClusterEye OS 0.1.0 installation image (BIOS + UEFI, bare metal and virtual)",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/eye-os-0.1.0.iso",
+          "sha256": "20ef54dabefac06e0309c863f115027ce70f4be3dcf345aef008d72322fe6ae9"
+        },
+        {
+          "name": "eye-os-0.1.0.ova",
+          "type": "ova",
+          "arch": "linux-amd64",
+          "description": "ClusterEye OS 0.1.0 for VMware vSphere / Workstation",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/eye-os-0.1.0.ova",
+          "sha256": "331be435d42aaedff424fba9a648678e3809d0deb5b85d57ff2f2051eb71e066"
+        },
+        {
+          "name": "eye-os_0.1.0.qcow2",
+          "type": "image",
+          "arch": "linux-amd64",
+          "description": "ClusterEye OS 0.1.0 disk image for KVM / Proxmox / OpenStack",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/eye-os_0.1.0.qcow2",
+          "sha256": "a035948fb38117b33f8064300c307c88bc6795ab6652baf7412179c81a68f9a7"
+        },
+        {
+          "name": "eye-os_0.1.0.update.tar",
+          "type": "update",
+          "arch": "linux-amd64",
+          "description": "ClusterEye OS 0.1.0 in-place upgrade bundle (`system upgrade` on the console)",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/eye-os_0.1.0.update.tar",
+          "sha256": "c14702e014cc2eb698e53a8763f7671454b9843f0a7d93a4643d7f726e449ec2"
+        },
+        {
+          "name": "SHA256SUMS",
+          "type": "checksums",
+          "description": "Checksums for the ClusterEye OS 0.1.0 files",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/SHA256SUMS",
+          "sha256": "f671b850ca0258ea452a2c08dfb24749b1afd5338fd29f00dba0ac8e9aad3bf7"
+        },
+        {
+          "name": "SHA256SUMS.asc",
+          "type": "signature",
+          "description": "Detached signature of SHA256SUMS (ClusterEye release signing key)",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.0/SHA256SUMS.asc",
+          "sha256": "16d2890dc1c66cb51c715a8575109b21ec930033f9745bfaabaa8a646564f7a5"
+        }
+      ]
+    }
+  ],
   "clustereye_api_releases": [
     {
       "version": "v1.6.15",
