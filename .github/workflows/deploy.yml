@@ -19,6 +19,7 @@ on:
       # ediyor, yani `push` tetiklenmiyordu ve downloads/agent/latest/install.sh
       # ancak alakasız bir sonraki workflow'la yayına çıkıyordu.
       - "Update Install Script"
+      - "Update Eye OS"
     types:
       - completed
 
@@ -48,6 +49,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
+      # eye/index.json is what ClusterEye OS servers trust for upgrades and
+      # component versions. Its API/UI lists are rebuilt here from what is
+      # really under downloads/ (the mirror and the prune change those), and
+      # the whole file is signed with the ClusterEye release key on every
+      # publish — servers verify the signature against the fingerprint they
+      # pin and refuse an unsigned or stale-signed index.
+      - name: Refresh and sign eye/index.json
+        env:
+          EYE_GPG_PRIVATE_KEY: ${{ secrets.EYE_GPG_PRIVATE_KEY }}
+          EYE_GPG_PASSPHRASE: ${{ secrets.EYE_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          python3 tools/eye-index.py sync-components
+          rm -f eye/index.json.asc
+          if [ -z "${EYE_GPG_PRIVATE_KEY}" ]; then
+            echo "::warning::EYE_GPG_PRIVATE_KEY is not set: eye/index.json is published UNSIGNED and ClusterEye OS servers will refuse it"
+            exit 0
+          fi
+          export GNUPGHOME; GNUPGHOME=$(mktemp -d); chmod 700 "$GNUPGHOME"
+          trap 'rm -rf "$GNUPGHOME"' EXIT
+          printf '%s' "$EYE_GPG_PRIVATE_KEY" | gpg --batch --quiet --import
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$EYE_GPG_PASSPHRASE" \
+              --armor --detach-sign --output eye/index.json.asc eye/index.json
+          status=$(gpg --batch --status-fd 1 --verify eye/index.json.asc eye/index.json 2>/dev/null || true)
+          grep -qE '^\[GNUPG:\] VALIDSIG .* 447CFB9BD464F747866117157E12CCDFEDF9400F$' <<<"$status" \
+            || { echo "::error::EYE_GPG_PRIVATE_KEY is not the ClusterEye release key (447CFB9BD464F747866117157E12CCDFEDF9400F)"; exit 1; }
+          # The public key is published for convenience; it is never the trust
+          # anchor (servers and eye-os's bump pin the fingerprint).
+          gpg --armor --export release@clustereye.com > eye/eye-release-signing.asc
+          echo "signed eye/index.json ($(sha256sum eye/index.json | cut -c1-16)…)"
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         

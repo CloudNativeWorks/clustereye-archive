@@ -1,0 +1,218 @@
+name: Update Eye OS
+
+# Mirrors a ClusterEye OS release from its PRIVATE source repo
+# (CloudNativeWorks/eye-os) into this public archive, and lists it in the
+# signed eye/index.json (key eye_os_releases) that ClusterEye OS servers read
+# for `system upgrade check` / `download`.
+#
+# The images are too large for GitHub Pages (1 GB site limit): they are
+# published as a GitHub Release of THIS repository (tag eye-os-v<X.Y.Z>);
+# only eye/index.json (and, at deploy time, its signature) lives on Pages.
+#
+# ── PREREQUISITES ───────────────────────────────────────────────────
+#  * Secret GH_PAT (organization secret, the one elchi-archive uses): must
+#    read CloudNativeWorks/eye-os (the release assets of the private repo).
+#  * Secrets EYE_GPG_PRIVATE_KEY / EYE_GPG_PASSPHRASE: the ClusterEye release
+#    key, used by deploy.yml to sign eye/index.json.
+#  * The eye-os release must exist (tag v<X.Y.Z> there); eye-os's release.yml
+#    dispatches this workflow as its last step.
+#
+# Trigger: Actions → "Update Eye OS" → Run workflow → version (e.g. v0.1.0).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'ClusterEye OS version to mirror (e.g., v0.1.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: clustereye-archive-push
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  # The ClusterEye release signing key, pinned here: the key that travels
+  # with a release is never the trust anchor (a re-signed release with its
+  # own key would otherwise pass).
+  RELEASE_KEY_FPR: 447CFB9BD464F747866117157E12CCDFEDF9400F
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Validate the version
+        run: |
+          [[ "${{ inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version must look like v0.1.0"; exit 1; }
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Free disk space for the images
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          df -h /
+
+      - name: Download and verify the release
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"; RAW="${VERSION#v}"
+          mkdir -p "releases/${VERSION}"; cd "releases/${VERSION}"
+          gh release download "${VERSION}" --repo CloudNativeWorks/eye-os \
+            --pattern "eye-os-${RAW}.iso" \
+            --pattern "eye-os-${RAW}.ova" \
+            --pattern "eye-os_${RAW}.qcow2" \
+            --pattern "eye-os_${RAW}.update.tar" \
+            --pattern "SHA256SUMS" \
+            --pattern "SHA256SUMS.asc" \
+            --pattern "eye-release-signing.asc"
+          export GNUPGHOME; GNUPGHOME=$(mktemp -d)
+          gpg --batch --quiet --import eye-release-signing.asc
+          status=$(gpg --batch --status-fd 1 --verify SHA256SUMS.asc SHA256SUMS 2>/dev/null || true)
+          grep -qE "^\[GNUPG:\] VALIDSIG .* ${RELEASE_KEY_FPR}\$" <<<"$status" \
+            || { echo "::error::SHA256SUMS.asc is not signed by the ClusterEye release key (${RELEASE_KEY_FPR})"; exit 1; }
+          sha256sum -c SHA256SUMS
+          # The body names the ClusterEye versions the images carry
+          # (eye-os release.yml writes "* clustereye-api: vX" and
+          # "* clustereye-ui: vY"); a release without them is refused.
+          gh release view "${VERSION}" --repo CloudNativeWorks/eye-os --json body -q .body > body.md
+          API=$(sed -nE 's/^\* clustereye-api: (v[0-9]+\.[0-9]+\.[0-9]+)\s*$/\1/p' body.md | head -1)
+          UI=$(sed -nE 's/^\* clustereye-ui: (v[0-9]+\.[0-9]+\.[0-9]+)\s*$/\1/p' body.md | head -1)
+          [[ -n $API && -n $UI ]] || { echo "::error::the release notes do not name clustereye-api / clustereye-ui versions"; exit 1; }
+          printf 'API_VERSION=%s\nUI_VERSION=%s\n' "$API" "$UI" > components.env
+          ls -la
+
+      - name: Add the release to eye/index.json
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"; RAW="${VERSION#v}"; DIR="releases/${VERSION}"
+          . "$DIR/components.env"
+          # The entry is built in Python, not a shell heredoc: a heredoc would
+          # run `…` and $(…) inside the descriptions.
+          VERSION="$VERSION" RAW="$RAW" DIR="$DIR" API="$API_VERSION" UI="$UI_VERSION" \
+          BASE="https://github.com/${{ github.repository }}/releases/download/eye-os-${VERSION}" \
+          python3 - <<'PY'
+          import datetime, hashlib, json, os
+          v, raw, d, base = (os.environ[k] for k in ("VERSION", "RAW", "DIR", "BASE"))
+          sums = {}
+          for line in open(f"{d}/SHA256SUMS"):
+              parts = line.split()
+              if len(parts) == 2:
+                  sums[parts[1].lstrip("*")] = parts[0]
+          def filesum(name):
+              return hashlib.sha256(open(f"{d}/{name}", "rb").read()).hexdigest()
+          def entry(name, typ, desc, digest, arch="linux-amd64"):
+              e = {"name": name, "type": typ}
+              if arch:
+                  e["arch"] = arch
+              e.update({"description": desc, "download_url": f"{base}/{name}", "sha256": digest})
+              return e
+          def listed(name):
+              if name not in sums:
+                  raise SystemExit(f"{name} is not in SHA256SUMS")
+              return sums[name]
+          release = {
+              "version": v,
+              "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "api_version": os.environ["API"],
+              "ui_version": os.environ["UI"],
+              "files": [
+                  entry(f"eye-os-{raw}.iso", "iso", f"ClusterEye OS {raw} installation image (BIOS + UEFI, bare metal and virtual)", listed(f"eye-os-{raw}.iso")),
+                  entry(f"eye-os-{raw}.ova", "ova", f"ClusterEye OS {raw} for VMware vSphere / Workstation", listed(f"eye-os-{raw}.ova")),
+                  entry(f"eye-os_{raw}.qcow2", "image", f"ClusterEye OS {raw} disk image for KVM / Proxmox / OpenStack", listed(f"eye-os_{raw}.qcow2")),
+                  entry(f"eye-os_{raw}.update.tar", "update", f"ClusterEye OS {raw} in-place upgrade bundle (`system upgrade` on the console)", listed(f"eye-os_{raw}.update.tar")),
+                  entry("SHA256SUMS", "checksums", f"Checksums for the ClusterEye OS {raw} files", filesum("SHA256SUMS"), arch=None),
+                  entry("SHA256SUMS.asc", "signature", "Detached signature of SHA256SUMS (ClusterEye release signing key)", filesum("SHA256SUMS.asc"), arch=None),
+              ],
+          }
+          json.dump(release, open("eye-os-entry.json", "w"), indent=2)
+          PY
+          python3 tools/eye-index.py upsert-os eye-os-entry.json
+          python3 tools/eye-index.py sync-components
+          rm -f eye-os-entry.json
+          # Only the three newest OS releases stay listed; their GitHub
+          # Releases are kept (a server may still be on one) — the list is
+          # what servers are offered.
+          python3 - <<'PY'
+          import json
+          p = "eye/index.json"; d = json.load(open(p))
+          d["eye_os_releases"] = d["eye_os_releases"][:3]
+          json.dump(d, open(p, "w"), indent=2); open(p, "a").write("\n")
+          PY
+          python3 tools/eye-index.py check
+          node scripts/generate-index.js
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"; RAW="${VERSION#v}"; DIR="releases/${VERSION}"
+          . "$DIR/components.env"
+          TAG="eye-os-${VERSION}"
+          cat > notes.md <<EOF
+          ## ClusterEye OS ${RAW}
+
+          The ClusterEye database monitoring server as a system image: it boots,
+          asks for its network and ClusterEye settings, and runs the ClusterEye
+          API and UI with PostgreSQL, ClickHouse and InfluxDB (each may be
+          external instead).
+
+          * clustereye-api: ${API_VERSION}
+          * clustereye-ui: ${UI_VERSION}
+
+          | Download | Use it for |
+          |---|---|
+          | \`.iso\` | bare metal and any hypervisor (BIOS + UEFI) |
+          | \`.ova\` | VMware vSphere / Workstation (settings asked in the deployment wizard) |
+          | \`.qcow2\` | KVM, Proxmox, OpenStack |
+          | \`.update.tar\` | in-place upgrade of an existing server (\`system upgrade\` on the console) |
+
+          ### Verifying a download
+
+          \`\`\`bash
+          gpg --import eye-release-signing.asc
+          gpg --verify SHA256SUMS.asc SHA256SUMS   # key 447C FB9B D464 F747 8661 1715 7E12 CCDF EDF9 400F
+          sha256sum -c --ignore-missing SHA256SUMS
+          \`\`\`
+
+          ### First boot
+
+          The console user is \`admin\` / \`admin\` and the password must be changed
+          at first login. The management address, the ClusterEye domain and the
+          databases are asked by the setup wizard, or supplied in advance through
+          the OVA properties, cloud-init, or an answer file on the installation medium.
+          EOF
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" --title "ClusterEye OS ${RAW}" --notes-file notes.md \
+            "$DIR/eye-os-${RAW}.iso" "$DIR/eye-os-${RAW}.ova" "$DIR/eye-os_${RAW}.qcow2" \
+            "$DIR/eye-os_${RAW}.update.tar" "$DIR/SHA256SUMS" "$DIR/SHA256SUMS.asc" "$DIR/eye-release-signing.asc"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add eye/index.json index.html
+          git commit -m "Add ClusterEye OS ${{ inputs.version }}" || { echo "No changes to commit"; exit 0; }
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push origin main; then exit 0; fi
+            echo "Push attempt $attempt failed (remote changed), retrying in 5s..."; sleep 5
+          done
+          echo "Push failed after 5 attempts"; exit 1
+
+      # A push made with GITHUB_TOKEN fires no `push` workflow, and the
+      # workflow_run trigger in deploy.yml has not reliably followed the
+      # mirror workflows; a dispatch made with GITHUB_TOKEN does start one.
+      - name: Deploy Pages (signs eye/index.json)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main

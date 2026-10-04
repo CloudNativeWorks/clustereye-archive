@@ -1,0 +1,73 @@
+{
+  "eye_os_releases": [],
+  "clustereye_api_releases": [
+    {
+      "version": "v1.6.15",
+      "files": [
+        {
+          "name": "clustereye-api.gz",
+          "arch": "linux-amd64",
+          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.15/clustereye-api.gz",
+          "sha256": "5b32c396fb74bf89762d8f02f9bce912ad286942264b89214488c73514099625",
+          "sha256_uncompressed": "47d892068c937b539bfd7d2557fc3dbfd2e4e0e34feb529496b3173449918e0a"
+        }
+      ]
+    },
+    {
+      "version": "v1.6.12",
+      "files": [
+        {
+          "name": "clustereye-api.gz",
+          "arch": "linux-amd64",
+          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.12/clustereye-api.gz",
+          "sha256": "7076f4c509c954bf7d86df3d19fef67486a690ec111398e24e78e96c70ab0533",
+          "sha256_uncompressed": "701b8ec60115f185a794d6f0279b29b3cec1ad98aef4eb092fe082f70a0fa50f"
+        }
+      ]
+    },
+    {
+      "version": "v1.6.10",
+      "files": [
+        {
+          "name": "clustereye-api.gz",
+          "arch": "linux-amd64",
+          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.10/clustereye-api.gz",
+          "sha256": "7823f51ff125de3ebb72a6f884492dec452a2bdcf745d2b7f431cdb7a2ceae8f",
+          "sha256_uncompressed": "fd735eee4b88fb2061e7bfb8ffd2dac28e13bc049a06556d0edc7e118851d335"
+        }
+      ]
+    }
+  ],
+  "clustereye_ui_releases": [
+    {
+      "version": "v1.6.17",
+      "files": [
+        {
+          "name": "clustereye.tar.gz",
+          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.17/clustereye.tar.gz",
+          "sha256": "669a7b489c078428dc47b2f22b05f7fc0afd99c15bd37cf99c261210b80f4cdc"
+        }
+      ]
+    },
+    {
+      "version": "v1.6.14",
+      "files": [
+        {
+          "name": "clustereye.tar.gz",
+          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.14/clustereye.tar.gz",
+          "sha256": "1b44f473eeee503e56b776a279954ed15bbb1e8fd75f49f541850b9b63d9faab"
+        }
+      ]
+    },
+    {
+      "version": "v1.6.12",
+      "files": [
+        {
+          "name": "clustereye.tar.gz",
+          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.12/clustereye.tar.gz",
+          "sha256": "19b9e424592d4e73850f85e701d4793980d016f4453657af3a77ce17901e746a"
+        }
+      ]
+    }
+  ]
+}

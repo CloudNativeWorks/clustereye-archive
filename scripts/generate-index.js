@@ -5,6 +5,13 @@ const releasesPath = path.join(__dirname, '..', 'releases.json');
 const outputPath = path.join(__dirname, '..', 'index.html');
 
 const data = JSON.parse(fs.readFileSync(releasesPath, 'utf8'));
+
+// ClusterEye OS releases come from the signed eye/index.json (written by
+// update-eye-os.yml); the tab only appears once there is a release.
+const eyeIndexPath = path.join(__dirname, '..', 'eye', 'index.json');
+const eyeOsReleases = fs.existsSync(eyeIndexPath)
+    ? (JSON.parse(fs.readFileSync(eyeIndexPath, 'utf8')).eye_os_releases || [])
+    : [];
 const domain = data.domain;
 const baseUrl = `https://${domain}`;
 
@@ -282,6 +289,54 @@ function generateStandaloneSection(standalone) {
                 </div>`;
 }
 
+function generateEyeOsSection(releases) {
+    const kinds = {
+        iso: 'Bare metal and any hypervisor (BIOS + UEFI)',
+        ova: 'VMware vSphere / Workstation',
+        image: 'KVM, Proxmox, OpenStack (qcow2)',
+        update: 'In-place upgrade of an existing server',
+        checksums: 'SHA256SUMS',
+        signature: 'Signature of SHA256SUMS',
+    };
+    const cards = releases.map((r, i) => {
+        const rows = (r.files || []).map(f => `
+                                <div class="standalone-script-row">
+                                    <div>
+                                        <span class="component-name">${escapeHtml(f.name)}</span>
+                                        <span class="component-desc">${escapeHtml(kinds[f.type] || f.type || '')}</span>
+                                    </div>
+                                    <a href="${escapeHtml(f.download_url)}" class="btn-download">Download</a>
+                                </div>`).join('');
+        return `
+                        <div class="standalone-card">
+                            <h4>ClusterEye OS ${escapeHtml(r.version)}${i === 0 ? ' (latest)' : ''}</h4>
+                            <p class="component-desc">${formatDate(r.date)} · clustereye-api ${escapeHtml(r.api_version || '?')} · clustereye-ui ${escapeHtml(r.ui_version || '?')}</p>
+                            <div class="standalone-scripts">${rows}
+                            </div>
+                        </div>`;
+    }).join('\n');
+    return `
+                <div class="standalone-section">
+                    <div class="standalone-hero">
+                        <div class="standalone-hero-content">
+                            <h3>ClusterEye OS</h3>
+                            <p>The ClusterEye server as a ready system image: PostgreSQL, ClickHouse and InfluxDB
+                            built in (each can be external), set up from its console, the OVA wizard or cloud-init,
+                            upgraded in place with automatic rollback.</p>
+                        </div>
+                    </div>
+                    <div class="standalone-install">
+                        <div class="code-block">
+                            <code id="eye-os-verify">gpg --import eye-release-signing.asc &amp;&amp; gpg --verify SHA256SUMS.asc SHA256SUMS &amp;&amp; sha256sum -c --ignore-missing SHA256SUMS</code>
+                            <button class="copy-btn" onclick="copyToClipboard('eye-os-verify')" title="Copy to clipboard">Copy</button>
+                        </div>
+                        <p class="component-desc">Release key fingerprint: 447C FB9B D464 F747 8661 1715 7E12 CCDF EDF9 400F</p>
+                    </div>
+                    <div class="standalone-grid">${cards}
+                    </div>
+                </div>`;
+}
+
 function generateScriptCard(script, type) {
     const usageCmd = type === 'stack'
         ? `curl -sSL ${baseUrl}/${script.file} | bash`
@@ -412,7 +467,7 @@ const html = `<!DOCTYPE html>
                 <button class="tab active" data-tab="standalone">Standalone Install</button>
                 <button class="tab" data-tab="agent">ClusterEye Agent</button>
                 <button class="tab" data-tab="scripts">Install Scripts</button>
-            </div>
+${eyeOsReleases.length ? '                <button class="tab" data-tab="eye-os">ClusterEye OS</button>\n' : ''}            </div>
 
             <!-- Standalone Tab Content -->
             <div class="tab-content active" id="standalone-content">
@@ -432,7 +487,12 @@ ${generateWindowsCard(data.windows)}
                 </div>
             </div>
 
-            <!-- Scripts Tab Content -->
+${eyeOsReleases.length ? `            <!-- ClusterEye OS Tab Content -->
+            <div class="tab-content" id="eye-os-content">
+${generateEyeOsSection(eyeOsReleases)}
+            </div>
+
+` : ''}            <!-- Scripts Tab Content -->
             <div class="tab-content" id="scripts-content">
                 <div class="scripts-grid">
 ${generateScriptCard(data.scripts.stack, 'stack')}

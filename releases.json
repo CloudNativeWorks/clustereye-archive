@@ -279,12 +279,12 @@
       "api": {
         "name": "ClusterEye API",
         "description": "Go binary — REST API (:8080) + gRPC (:50051)",
-        "downloadUrl": "https://github.com/CloudNativeWorks/clustereye-api/releases/download/v{VERSION}/clustereye-api"
+        "downloadUrl": "https://archive.clustereye.com/downloads/api/v{VERSION}/clustereye-api.gz"
       },
       "ui": {
         "name": "ClusterEye UI",
         "description": "Pre-built static frontend assets",
-        "downloadUrl": "https://github.com/CloudNativeWorks/clustereye/releases/download/v{VERSION}/clustereye.tar.gz"
+        "downloadUrl": "https://archive.clustereye.com/downloads/ui/v{VERSION}/clustereye.tar.gz"
       }
     }
   },

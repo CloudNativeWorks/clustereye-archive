@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
 
     steps:
       - name: Validate inputs
@@ -135,3 +136,13 @@ jobs:
           done
           echo "Push failed after 5 attempts"
           exit 1
+
+      # deploy.yml lists this workflow under workflow_run, but that trigger has
+      # never fired for it (every Pages deploy after a mirror so far was a
+      # manual dispatch, and the mirrored files 404ed until then). A dispatch
+      # made with GITHUB_TOKEN does start a run. Pages also re-signs
+      # eye/index.json, whose API/UI lists follow downloads/.
+      - name: Deploy Pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main

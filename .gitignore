@@ -2,3 +2,9 @@
 # repo is published wholesale to GitHub Pages — they should never ship.
 .DS_Store
 **/.DS_Store
+
+# ClusterEye OS images are downloaded here by update-eye-os.yml and published
+# as GitHub Releases, never committed (Pages has a 1 GB limit).
+releases/
+# Made at deploy time from the release key (deploy.yml); never committed.
+eye/index.json.asc
