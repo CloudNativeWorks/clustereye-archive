@@ -56,6 +56,11 @@ jobs:
       # publish — servers verify the signature against the fingerprint they
       # pin and refuse an unsigned or stale-signed index.
       - name: Refresh and sign eye/index.json
+        # Never blocks the deploy: the agent, the standalone artifacts and the
+        # page must publish whatever happens here. An unsigned or unrefreshed
+        # eye/index.json is refused by ClusterEye OS servers (fail-closed), so
+        # a failure costs only the OS upgrade feed until it is fixed.
+        continue-on-error: true
         env:
           EYE_GPG_PRIVATE_KEY: ${{ secrets.EYE_GPG_PRIVATE_KEY }}
           EYE_GPG_PASSPHRASE: ${{ secrets.EYE_GPG_PASSPHRASE }}
