@@ -1,6 +1,60 @@
 {
   "eye_os_releases": [
     {
+      "version": "v0.1.1",
+      "date": "2026-10-05T19:06:38Z",
+      "api_version": "v1.6.17",
+      "ui_version": "v1.6.21",
+      "files": [
+        {
+          "name": "eye-os-0.1.1.iso",
+          "type": "iso",
+          "arch": "linux-amd64",
+          "description": "ClusterEye OS 0.1.1 installation image (BIOS + UEFI, bare metal and virtual)",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.1/eye-os-0.1.1.iso",
+          "sha256": "8079d56fe0ab50e175d80fd60c0bf01ef8a5d190dd1b82937ed785d775d92785"
+        },
+        {
+          "name": "eye-os-0.1.1.ova",
+          "type": "ova",
+          "arch": "linux-amd64",
+          "description": "ClusterEye OS 0.1.1 for VMware vSphere / Workstation",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.1/eye-os-0.1.1.ova",
+          "sha256": "d24ad04b432f1c1f546e7b9f0e5f7f8608217f8c58781429e08483e1f46ebcae"
+        },
+        {
+          "name": "eye-os_0.1.1.qcow2",
+          "type": "image",
+          "arch": "linux-amd64",
+          "description": "ClusterEye OS 0.1.1 disk image for KVM / Proxmox / OpenStack",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.1/eye-os_0.1.1.qcow2",
+          "sha256": "2d1450f57576bc3d30c0469b5206f346e0de3d4b463ad722909d0ebc81a3693f"
+        },
+        {
+          "name": "eye-os_0.1.1.update.tar",
+          "type": "update",
+          "arch": "linux-amd64",
+          "description": "ClusterEye OS 0.1.1 in-place upgrade bundle (`system upgrade` on the console)",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.1/eye-os_0.1.1.update.tar",
+          "sha256": "ff33f6b2ebbc2ff32422a55b01da30b23647e0f84355c343539b25a04106317c"
+        },
+        {
+          "name": "SHA256SUMS",
+          "type": "checksums",
+          "description": "Checksums for the ClusterEye OS 0.1.1 files",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.1/SHA256SUMS",
+          "sha256": "249592f2b1d90eb9062ade1af9f5318c067b1d8ed2d256a847462a9ebcc57b39"
+        },
+        {
+          "name": "SHA256SUMS.asc",
+          "type": "signature",
+          "description": "Detached signature of SHA256SUMS (ClusterEye release signing key)",
+          "download_url": "https://github.com/CloudNativeWorks/clustereye-archive/releases/download/eye-os-v0.1.1/SHA256SUMS.asc",
+          "sha256": "1fe22c3db876d001b3d4cf1f725de24c99af8c01203bbb13fdd2c2477f33d191"
+        }
+      ]
+    },
+    {
       "version": "v0.1.0",
       "date": "2026-10-04T11:42:45Z",
       "api_version": "v1.6.15",
@@ -57,70 +111,70 @@
   ],
   "clustereye_api_releases": [
     {
-      "version": "v1.6.15",
+      "version": "v1.6.19",
       "files": [
         {
           "name": "clustereye-api.gz",
           "arch": "linux-amd64",
-          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.15/clustereye-api.gz",
-          "sha256": "5b32c396fb74bf89762d8f02f9bce912ad286942264b89214488c73514099625",
-          "sha256_uncompressed": "47d892068c937b539bfd7d2557fc3dbfd2e4e0e34feb529496b3173449918e0a"
+          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.19/clustereye-api.gz",
+          "sha256": "429759020bfe157f53ba7c865f0e42c3e4b1d6dd5941bf738e342ae4389ad5c7",
+          "sha256_uncompressed": "f387542c957d2b40a0d21628d59d1f413b0e7a9ada5e69911b3c378847791b8b"
         }
       ]
     },
     {
-      "version": "v1.6.12",
+      "version": "v1.6.18",
       "files": [
         {
           "name": "clustereye-api.gz",
           "arch": "linux-amd64",
-          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.12/clustereye-api.gz",
-          "sha256": "7076f4c509c954bf7d86df3d19fef67486a690ec111398e24e78e96c70ab0533",
-          "sha256_uncompressed": "701b8ec60115f185a794d6f0279b29b3cec1ad98aef4eb092fe082f70a0fa50f"
+          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.18/clustereye-api.gz",
+          "sha256": "f7138786a8b5d0913be024ece8a73f466f1c0568f01f41e85ab23dc0fe8ad24f",
+          "sha256_uncompressed": "cc3b285cd6a8409bcfcf7c763390009d581245e0eeaab4768f66c72fed282bb8"
         }
       ]
     },
     {
-      "version": "v1.6.10",
+      "version": "v1.6.17",
       "files": [
         {
           "name": "clustereye-api.gz",
           "arch": "linux-amd64",
-          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.10/clustereye-api.gz",
-          "sha256": "7823f51ff125de3ebb72a6f884492dec452a2bdcf745d2b7f431cdb7a2ceae8f",
-          "sha256_uncompressed": "fd735eee4b88fb2061e7bfb8ffd2dac28e13bc049a06556d0edc7e118851d335"
+          "download_url": "https://archive.clustereye.com/downloads/api/v1.6.17/clustereye-api.gz",
+          "sha256": "369e7d549f8ba458c119a9d35f388cf6f1de38359092a0409726969154561765",
+          "sha256_uncompressed": "6d3f14a94c5dd6e566a18815a17e76617484207aa993c96f93faf8da2b89d9ab"
         }
       ]
     }
   ],
   "clustereye_ui_releases": [
     {
-      "version": "v1.6.17",
+      "version": "v1.6.23",
       "files": [
         {
           "name": "clustereye.tar.gz",
-          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.17/clustereye.tar.gz",
-          "sha256": "669a7b489c078428dc47b2f22b05f7fc0afd99c15bd37cf99c261210b80f4cdc"
+          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.23/clustereye.tar.gz",
+          "sha256": "6c4494ee0251da2302451aa243a7d50b42a3cbf77086f5223c179d526e887500"
         }
       ]
     },
     {
-      "version": "v1.6.14",
+      "version": "v1.6.22",
       "files": [
         {
           "name": "clustereye.tar.gz",
-          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.14/clustereye.tar.gz",
-          "sha256": "1b44f473eeee503e56b776a279954ed15bbb1e8fd75f49f541850b9b63d9faab"
+          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.22/clustereye.tar.gz",
+          "sha256": "6f4f24f2efada9575d94312827a1948c97aeefab8c581fbb2b86d4e0f90a8c5d"
         }
       ]
     },
     {
-      "version": "v1.6.12",
+      "version": "v1.6.21",
       "files": [
         {
           "name": "clustereye.tar.gz",
-          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.12/clustereye.tar.gz",
-          "sha256": "19b9e424592d4e73850f85e701d4793980d016f4453657af3a77ce17901e746a"
+          "download_url": "https://archive.clustereye.com/downloads/ui/v1.6.21/clustereye.tar.gz",
+          "sha256": "b889faef92419b7e5f24346d2d1983d308f950d18d197ecfdea200ab62d1a48a"
         }
       ]
     }
