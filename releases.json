@@ -4,8 +4,8 @@
     "repo": "CloudNativeWorks/clustereye-agent",
     "releases": [
       {
-        "version": "v2.1.23",
-        "date": "2026-10-28",
+        "version": "v2.1.24",
+        "date": "2026-10-30",
         "latest": true,
         "assets": [
           {
@@ -21,8 +21,8 @@
         ]
       },
       {
-        "version": "v2.1.21",
-        "date": "2026-10-19",
+        "version": "v2.1.23",
+        "date": "2026-10-28",
         "latest": false,
         "assets": [
           {
@@ -38,7 +38,7 @@
         ]
       },
       {
-        "version": "v2.1.19",
+        "version": "v2.1.21",
         "date": "2026-10-19",
         "latest": false,
         "assets": [

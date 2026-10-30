@@ -1,20 +1,20 @@
 {
-  "version": "2.1.23",
+  "version": "2.1.24",
   "channel": "stable",
   "packages": [
     {
       "platform": "windows",
       "arch": "amd64",
-      "url": "https://archive.clustereye.com/agents/windows/mssql/stable/ClusterEyeAgent-2.1.23-win-x64.zip",
-      "sha256": "d3fda0829492936dee89047df7ceede690e05e9225632d114da62991b32e1634",
-      "filename": "ClusterEyeAgent-2.1.23-win-x64.zip"
+      "url": "https://archive.clustereye.com/agents/windows/mssql/stable/ClusterEyeAgent-2.1.24-win-x64.zip",
+      "sha256": "1bba7fb745ec9449c39681b39a69a7c6ca34e42c5efe308d3903246bda79bd22",
+      "filename": "ClusterEyeAgent-2.1.24-win-x64.zip"
     },
     {
       "platform": "linux",
       "arch": "amd64",
-      "url": "https://archive.clustereye.com/agents/linux/stable/ClusterEyeAgent-2.1.23-linux-amd64.tar.gz",
-      "sha256": "41c7e867a7a3a00315e1976935005a5718a8bd5fc90e01cd0bda16d57f1ca8c0",
-      "filename": "ClusterEyeAgent-2.1.23-linux-amd64.tar.gz"
+      "url": "https://archive.clustereye.com/agents/linux/stable/ClusterEyeAgent-2.1.24-linux-amd64.tar.gz",
+      "sha256": "f8bde31581769a90b70aa7739fe3f1135b2c9d4b44cb3574c0a8d3b1be2b3351",
+      "filename": "ClusterEyeAgent-2.1.24-linux-amd64.tar.gz"
     }
   ]
 }
