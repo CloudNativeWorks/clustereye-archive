@@ -3,10 +3,108 @@
 # Source repos (clustereye-api, clustereye) are private; artifacts are mirrored to
 # archive.clustereye.com by the archive's pull workflow (update-standalone-artifacts.yml).
 
-readonly API_RELEASE_BASE="https://archive.clustereye.com/downloads/api"
-readonly UI_RELEASE_BASE="https://archive.clustereye.com/downloads/ui"
+# ARCHIVE_BASE_URL can be overridden (tests, mirrors); default is the public archive.
+ARCHIVE_BASE_URL="${ARCHIVE_BASE_URL:-https://archive.clustereye.com}"
+readonly API_RELEASE_BASE="${ARCHIVE_BASE_URL}/downloads/api"
+readonly UI_RELEASE_BASE="${ARCHIVE_BASE_URL}/downloads/ui"
 readonly BINARY_DEST="/usr/local/bin/clustereye-api"
 readonly FRONTEND_DEST="/usr/share/clustereye/web"
+
+# Prints the newest published version (bare, no "v") of <api|ui>, read from the
+# single-line LATEST file the archive publishes next to the version directories.
+# On failure prints a friendly error to stderr, nothing to stdout, and returns 1.
+# The body runs in a subshell with the ERR trap cleared, so the installer's
+# "Command failed" trap does not add noise around the friendly message; call it
+# as $(download::resolve_latest <comp> || :) and treat empty output as failure
+# (a bare failing call inside $(...) would still trip the inherited trap).
+download::resolve_latest() (
+  trap - ERR
+  local comp="$1" url out version=""
+  url="${ARCHIVE_BASE_URL}/downloads/${comp}/LATEST"
+  if out=$(curl -fsSL --connect-timeout 10 --max-time 30 --retry 2 "$url" 2>/dev/null); then
+    version=$(printf '%s\n' "$out" | head -n 1 | tr -d '[:space:]')
+  fi
+  version="${version#v}"
+  if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?$ ]]; then
+    echo "[ERR]  could not resolve latest ${comp} version; pass --${comp}-version=<ver> (looked at ${url})" >&2
+    return 1
+  fi
+  printf '%s\n' "$version"
+)
+
+# Path of the marker install.sh / upgrade.sh write after a successful run
+# (lines "api=<ver>" and "ui=<ver>"). Overridable for tests.
+download::_versions_file() { printf '%s\n' "${CE_VERSIONS_FILE:-/etc/clustereye/installed-versions}"; }
+
+# Prints the recorded installed version of <api|ui>, or nothing when unknown.
+download::installed_version() {
+  local f v
+  f=$(download::_versions_file)
+  [[ -r "$f" ]] || return 0
+  v=$(grep -E "^$1=" "$f" 2>/dev/null | head -n 1 | cut -d= -f2- | tr -d '[:space:]' || true)
+  [[ "$v" == "unknown" ]] && v=""
+  printf '%s' "$v"
+}
+
+# Records the installed versions: download::write_installed_versions <api> <ui>.
+# An empty value is written as "unknown".
+download::write_installed_versions() {
+  local f tmp
+  f=$(download::_versions_file)
+  mkdir -p "$(dirname "$f")"
+  tmp="${f}.tmp.$$"
+  printf 'api=%s\nui=%s\n' "${1:-unknown}" "${2:-unknown}" > "$tmp"
+  chmod 0644 "$tmp"
+  mv -f "$tmp" "$f"
+}
+
+# Replaces an empty or "latest" CE_API_VERSION / CE_UI_VERSION with the
+# resolved latest version. Explicit versions are left alone (no network call).
+download::resolve_versions() {
+  if [[ -z "${CE_API_VERSION:-}" || "${CE_API_VERSION}" == "latest" ]]; then
+    CE_API_VERSION=$(download::resolve_latest api || :)
+    [[ -n "$CE_API_VERSION" ]] || return 1
+  fi
+  if [[ -z "${CE_UI_VERSION:-}" || "${CE_UI_VERSION}" == "latest" ]]; then
+    CE_UI_VERSION=$(download::resolve_latest ui || :)
+    [[ -n "$CE_UI_VERSION" ]] || return 1
+  fi
+}
+
+# Decides what upgrade.sh will do from CE_API_VERSION / CE_UI_VERSION /
+# CE_ASSUME_YES. A bare run (neither version given) resolves latest, prints
+# what is available next to what is installed, and returns 2 unless --yes was
+# given, so production is never upgraded by accident. Explicit versions and
+# "latest" proceed without --yes. Returns 1 if latest cannot be resolved.
+download::plan_upgrade() {
+  local bare=0
+  if [[ -z "${CE_API_VERSION:-}" && -z "${CE_UI_VERSION:-}" ]]; then
+    bare=1
+    CE_API_VERSION=latest
+    CE_UI_VERSION=latest
+  fi
+  if [[ "$CE_API_VERSION" == "latest" ]]; then
+    CE_API_VERSION=$(download::resolve_latest api || :)
+    [[ -n "$CE_API_VERSION" ]] || return 1
+  fi
+  if [[ "$CE_UI_VERSION" == "latest" ]]; then
+    CE_UI_VERSION=$(download::resolve_latest ui || :)
+    [[ -n "$CE_UI_VERSION" ]] || return 1
+  fi
+  if [[ $bare == 1 && "${CE_ASSUME_YES:-0}" != 1 ]]; then
+    # Installed versions come from the marker written by install.sh/upgrade.sh;
+    # the API binary is never executed here. Without a marker the API version
+    # is "unknown" (the UI falls back to config.js).
+    local cfg="${CE_WEB_CONFIG:-/usr/share/clustereye/web/config.js}" ui_inst="" api_inst=""
+    api_inst=$(download::installed_version api)
+    ui_inst=$(download::installed_version ui)
+    [[ -n "$ui_inst" ]] || ui_inst=$(grep -oP "VERSION:\s*'\K[^']*" "$cfg" 2>/dev/null | head -1 || true)
+    echo "Latest available: api ${CE_API_VERSION}, ui ${CE_UI_VERSION}" >&2
+    echo "Installed:        api ${api_inst:-unknown}, ui ${ui_inst:-unknown}" >&2
+    echo "Nothing was changed. Re-run with --yes to upgrade to these versions, or pass --api-version=<ver> / --ui-version=<ver>." >&2
+    return 2
+  fi
+}
 
 download::fetch() {
   log::step "Downloading ClusterEye artifacts"
@@ -26,6 +124,13 @@ download::_verify_sha256() {
 }
 
 download::_fetch_api() {
+  download::_stage_api
+  download::_install_staged_api
+}
+
+# Downloads and verifies the API binary to ${BINARY_DEST}.new without touching
+# the running binary, so upgrade.sh can fetch before it stops the service.
+download::_stage_api() {
   local base="${API_RELEASE_BASE}/v${CE_API_VERSION}"
   log::info "Downloading API binary v${CE_API_VERSION}..."
 
@@ -54,6 +159,10 @@ download::_fetch_api() {
   rm -rf "$workdir"
 
   chmod 0755 "${BINARY_DEST}.new"
+  log::ok "API binary v${CE_API_VERSION} downloaded and verified"
+}
+
+download::_install_staged_api() {
   mv -f "${BINARY_DEST}.new" "$BINARY_DEST"
   chown root:root "$BINARY_DEST"
   log::ok "API binary installed: $BINARY_DEST (v${CE_API_VERSION})"

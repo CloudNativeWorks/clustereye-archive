@@ -10,6 +10,7 @@
 #     The 'latest/' and 'windows/' dirs are left untouched.
 #   - downloads/api/v* and downloads/ui/v* : keep the newest KEEP versions
 #     (semver order); remove the rest.
+#   - downloads/{api,ui}/LATEST : written with the newest remaining version.
 #   - releases.json       : truncate agent.releases to the kept versions.
 #   - agents/{linux,windows/mssql}/stable : keep only files for the current
 #     stable version (from agents/stable/manifest.json) + manifest.json/.gitkeep.
@@ -50,6 +51,11 @@ for base in downloads/api downloads/ui; do
     rm -rf "$d"
   done
 done
+
+# 1c) Publish the newest remaining version of each component as a one-line
+#     LATEST file (bare semver, no "v"; pre-releases like v1.5.54-rc1 are ignored); the standalone installer reads it
+#     when --api-version/--ui-version are omitted.
+bash scripts/write-latest.sh .
 
 # 2) Truncate releases.json to the kept versions.
 node -e '

@@ -48,9 +48,10 @@ jobs:
               -H "Accept: application/vnd.github.raw" > "$2"
           }
 
+          # Only the agent exe. clustereyesetup.exe and agent.yml.example are no
+          # longer published: agents enroll via `clustereye-agent enroll`
+          # (install.ps1) instead of a written agent.yml.
           fetch "clustereye-agent.exe"        downloads/agent/windows/clustereye-agent.exe
-          fetch "clustereyesetup.exe"         downloads/agent/windows/clustereyesetup.exe
-          fetch "cmd/agent/agent.yml.example" downloads/agent/windows/agent.yml.example
 
           echo "Downloaded files:"
           ls -la downloads/agent/windows/
@@ -59,11 +60,9 @@ jobs:
         run: |
           cd downloads/agent/windows
           sha256sum clustereye-agent.exe > clustereye-agent.exe.sha256
-          sha256sum clustereyesetup.exe > clustereyesetup.exe.sha256
 
           echo "Checksums generated:"
           cat clustereye-agent.exe.sha256
-          cat clustereyesetup.exe.sha256
 
       - name: Create packages and manifests for auto-update
         if: github.event.inputs.version != ''

@@ -6,7 +6,7 @@
 #
 # One-liner:
 #   curl -fsSL https://archive.clustereye.com/deploy/standalone/install.sh \
-#     | sudo bash -s -- --api-version=1.1.253 --ui-version=1.1.211 --domain=clustereye.example.com --postgres=local
+#     | sudo bash -s -- --domain=clustereye.example.com --postgres=local
 # ─────────────────────────────────────────────────────────────
 set -Eeuo pipefail
 
@@ -51,12 +51,14 @@ CE_NO_FIREWALL="0"
 # ── Parse arguments ─────────────────────────────────────────
 usage() {
   cat <<EOF
-Usage: $0 --api-version=<ver> --ui-version=<ver> [OPTIONS]
+Usage: $0 [--api-version=<ver>] [--ui-version=<ver>] [OPTIONS]
 
 Required:
-  --api-version=<ver>              API binary version (e.g., 1.1.253)
-  --ui-version=<ver>               UI assets version (e.g., 1.1.211)
   --domain=<host|ip>               Server domain or IP (e.g., clustereye.example.com or 10.0.1.5)
+
+Versions:
+  --api-version=<ver>              API binary version (default: latest, read from the archive)
+  --ui-version=<ver>               UI assets version (default: latest, read from the archive)
 
 PostgreSQL:
   --postgres=local|external        PostgreSQL mode (default: local)
@@ -105,14 +107,14 @@ Other:
 
 Examples:
   # Full local install
-  $0 --api-version=1.1.253 --ui-version=1.1.211 --postgres=local --influxdb=local
+  $0 --postgres=local --influxdb=local
 
   # External database, no InfluxDB
-  $0 --api-version=1.1.253 --ui-version=1.1.211 \\
+  $0 \\
     --postgres=external --postgres-host=db.example.com --postgres-password=secret
 
   # Custom port with provided TLS
-  $0 --api-version=1.1.253 --ui-version=1.1.211 \\
+  $0 \\
     --port=8443 --tls=provided --cert=/path/to/cert.pem --key=/path/to/key.pem
 EOF
   exit 0
@@ -159,9 +161,7 @@ parse_args() {
     shift
   done
 
-  # Validate required args
-  [[ -n "$CE_API_VERSION" ]] || { echo "Error: --api-version is required" >&2; exit 1; }
-  [[ -n "$CE_UI_VERSION" ]]  || { echo "Error: --ui-version is required" >&2; exit 1; }
+  # Validate required args (versions default to "latest", resolved in main)
   [[ -n "$CE_DOMAIN" ]]      || { echo "Error: --domain is required (e.g., --domain=clustereye.example.com or --domain=192.168.1.10)" >&2; exit 1; }
 }
 
@@ -189,7 +189,7 @@ bootstrap_if_needed() {
     firewall.sh journald.sh verify.sh
   )
   local template_files=(
-    nginx.conf nginx-http-block.conf nginx-locations.inc
+    nginx.conf nginx-http-block.conf nginx-locations.inc nginx-security-headers.inc
     clustereye-api.service server.yml.tmpl
     config.js.tmpl journald-clustereye.conf
     clickhouse-schema.sql
@@ -254,6 +254,12 @@ main() {
   source "${CE_SCRIPT_DIR}/lib/journald.sh"
   source "${CE_SCRIPT_DIR}/lib/verify.sh"
 
+  # No --api-version/--ui-version (or "latest"): read the newest published
+  # versions from the archive before anything is changed on the host.
+  download::resolve_versions || exit 1
+  export CE_API_VERSION CE_UI_VERSION
+  echo "Installing api ${CE_API_VERSION}, ui ${CE_UI_VERSION}"
+
   echo ""
   echo "  ╔═══════════════════════════════════════════════╗"
   echo "  ║     ClusterEye Standalone Installer v${INSTALLER_VERSION}     ║"
@@ -287,6 +293,8 @@ main() {
   firewall::open
   dirs::verify
   verify::wait
+  # Record what was installed; upgrade.sh reads it (the binary is never run for it).
+  download::write_installed_versions "$CE_API_VERSION" "$CE_UI_VERSION"
   verify::print_summary
 }
 

@@ -8,9 +8,9 @@ send_timeout                  365d;
 grpc_read_timeout             365d;
 grpc_send_timeout             365d;
 
-add_header X-Content-Type-Options    "nosniff"     always;
-add_header X-Frame-Options           "SAMEORIGIN"  always;
-add_header Referrer-Policy           "no-referrer" always;
+# Security headers (CSP, frame, sniffing, referrer, HSTS). Re-included in
+# every location below that sets its own add_header — see that file.
+include /etc/clustereye/nginx-security-headers.inc;
 
 client_max_body_size 50m;
 
@@ -67,17 +67,17 @@ location @grpc {
 # ═══════════════════════════════════════════════
 # Default route
 # Priority: CORS preflight → gRPC (content-type) → CEFE → static
+#
+# CORS is the API's decision (server.yml cors.allow_origins; the API's own
+# host is always allowed). nginx adds no CORS headers: it used to append
+# "Access-Control-Allow-Origin: *" with credentials to every response, on top
+# of the API's own (pentest 2026-09). A preflight carries no CEFE header, so
+# it is routed to the API explicitly.
 # ═══════════════════════════════════════════════
 location / {
     if ($request_method = 'OPTIONS') {
-        add_header 'Access-Control-Allow-Origin'      '*';
-        add_header 'Access-Control-Allow-Methods'     'GET, OPTIONS, POST, PUT, DELETE, PATCH';
-        add_header 'Access-Control-Allow-Headers'     'content-type,authorization,x-requested-with,cefe';
-        add_header 'Access-Control-Allow-Credentials' 'true';
-        add_header 'Access-Control-Max-Age'           '1728000';
-        add_header 'Content-Type'                     'text/plain charset=UTF-8';
-        add_header 'Content-Length'                    '0';
-        return 204;
+        error_page 418 = @api;
+        return 418;
     }
 
     if ($is_grpc) {
@@ -91,13 +91,6 @@ location / {
     }
 
     try_files $uri $uri/ /index.html;
-
-    add_header 'Access-Control-Allow-Origin'      '*' always;
-    add_header 'Access-Control-Allow-Methods'     'GET, OPTIONS, POST, PUT, DELETE, PATCH' always;
-    add_header 'Access-Control-Allow-Headers'     'content-type,authorization,x-requested-with,cefe' always;
-    add_header 'Access-Control-Allow-Credentials' 'true' always;
-    add_header 'Access-Control-Expose-Headers'    '*' always;
-    add_header 'Access-Control-Max-Age'           '1728000' always;
 }
 
 # Named location: API proxy (CEFE header match)
@@ -114,23 +107,33 @@ location @api {
     proxy_read_timeout      300s;
     proxy_send_timeout      300s;
 
-    add_header 'Access-Control-Allow-Origin'      '*' always;
-    add_header 'Access-Control-Allow-Methods'     'GET, OPTIONS, POST, PUT, DELETE, PATCH' always;
-    add_header 'Access-Control-Allow-Headers'     'content-type,authorization,x-requested-with,cefe' always;
-    add_header 'Access-Control-Allow-Credentials' 'true' always;
-    add_header 'Access-Control-Expose-Headers'    '*' always;
-    add_header 'Access-Control-Max-Age'           '1728000' always;
+    # The API sets these too; nginx's (inherited from the server level) are
+    # the single copy, so a browser never sees two conflicting values.
+    proxy_hide_header       X-Frame-Options;
+    proxy_hide_header       X-Content-Type-Options;
+    proxy_hide_header       Referrer-Policy;
+    proxy_hide_header       Strict-Transport-Security;
+    proxy_hide_header       Content-Security-Policy;
 }
 
 # Static asset caching
 location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
     expires 1y;
     add_header Cache-Control "public, immutable";
+    include /etc/clustereye/nginx-security-headers.inc;
+    try_files $uri =404;
+}
+
+# config.js is rendered per install and must not be cached for a year.
+location = /config.js {
+    add_header Cache-Control "no-cache" always;
+    include /etc/clustereye/nginx-security-headers.inc;
     try_files $uri =404;
 }
 
 location = /index.html {
     add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    include /etc/clustereye/nginx-security-headers.inc;
     try_files $uri =404;
 }
 

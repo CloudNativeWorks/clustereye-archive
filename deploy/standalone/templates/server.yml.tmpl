@@ -44,6 +44,10 @@ clickhouse:
   username: "${CLICKHOUSE_USERNAME}"
   password: "${CLICKHOUSE_PASSWORD}"
 
+# The UI is served from the API's own host (same origin), which the API always
+# allows. List other origins only for a UI hosted elsewhere, e.g.
+#   allow_origins: ["https://ui.example.com"]
+# "*" does NOT allow every origin (only the API's own host); reflecting every
+# origin with credentials needs CORS_ALLOW_ANY_ORIGIN=true and is unsafe.
 cors:
-  allow_origins:
-    - "*"
+  allow_origins: []

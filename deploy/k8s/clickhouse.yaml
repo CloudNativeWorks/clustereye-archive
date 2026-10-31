@@ -1,0 +1,109 @@
+# ClusterEye — single-node ClickHouse for existing Kubernetes deployments.
+#
+# Mirrors the clustereye-influxdb-0 / clustereye-postgresql-0 pattern:
+# one StatefulSet + headless-less ClusterIP Service in the clustereye
+# namespace. The initial schema (001_schema.sql from clustereye-api)
+# is applied automatically on first start via /docker-entrypoint-initdb.d;
+# tables added later are created by the API itself on boot
+# (ensureAdditiveSchema, CREATE TABLE IF NOT EXISTS).
+#
+# Usage:
+#   1. Change the password in the Secret below.
+#   2. kubectl apply -f clickhouse.yaml
+#   3. Point the API at it (env vars override server.yml):
+#      kubectl -n clustereye set env deploy/clustereye-clustereye-api \
+#        CLICKHOUSE_ENABLED=true \
+#        CLICKHOUSE_ADDR=clustereye-clickhouse:9000 \
+#        CLICKHOUSE_DATABASE=clustereye \
+#        CLICKHOUSE_USERNAME=clustereye \
+#        CLICKHOUSE_PASSWORD=<same password>
+#      (set env triggers a rollout automatically)
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: clustereye-clickhouse
+  namespace: clustereye
+type: Opaque
+stringData:
+  CLICKHOUSE_PASSWORD: "CHANGE-ME"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clustereye-clickhouse
+  namespace: clustereye
+spec:
+  selector:
+    app: clustereye-clickhouse
+  ports:
+    - name: native
+      port: 9000
+      targetPort: 9000
+    - name: http
+      port: 8123
+      targetPort: 8123
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clustereye-clickhouse
+  namespace: clustereye
+spec:
+  serviceName: clustereye-clickhouse
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clustereye-clickhouse
+  template:
+    metadata:
+      labels:
+        app: clustereye-clickhouse
+    spec:
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:24.8
+          ports:
+            - containerPort: 9000
+            - containerPort: 8123
+          env:
+            - name: CLICKHOUSE_DB
+              value: clustereye
+            - name: CLICKHOUSE_USER
+              value: clustereye
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clustereye-clickhouse
+                  key: CLICKHOUSE_PASSWORD
+            - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
+              value: "1"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: init-schema
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8123
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              memory: 4Gi
+      volumes:
+        - name: init-schema
+          configMap:
+            name: clustereye-clickhouse-schema
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 50Gi

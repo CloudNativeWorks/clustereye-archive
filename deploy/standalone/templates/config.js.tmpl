@@ -1,5 +1,8 @@
 window.CLUSTEREYE_CONFIG = {
-  API_URL: 'https://${CE_DISPLAY_HOST}${CE_PORT_SUFFIX}',
+  // Same origin as the page: nginx serves the UI and the API on one host, so
+  // the UI works under any name or IP it is opened with, and the API needs
+  // no cross-origin CORS allowance. Installed for https://${CE_DISPLAY_HOST}${CE_PORT_SUFFIX}
+  API_URL: window.location.origin,
   APP_NAME: 'Clustereye',
   VERSION: '${CE_UI_VERSION}',
   FEATURES: {

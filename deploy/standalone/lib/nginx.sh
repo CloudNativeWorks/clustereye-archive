@@ -3,17 +3,32 @@
 
 readonly NGINX_CONF="/etc/nginx/conf.d/clustereye.conf"
 readonly NGINX_LOCATIONS_INC="/etc/clustereye/nginx-locations.inc"
+readonly NGINX_SECURITY_HEADERS_INC="/etc/clustereye/nginx-security-headers.inc"
 readonly NGINX_MARKER="/var/lib/clustereye/.nginx-installed-by-ce"
 
 nginx::setup() {
   log::step "Configuring nginx"
   nginx::_install_package
   nginx::_render_locations
+  nginx::_render_security_headers
   nginx::_render_conf
   nginx::_disable_default_site
   nginx::_validate
   nginx::_enable_and_reload
   log::ok "nginx configured and running"
+}
+
+# Re-render the ClusterEye nginx files on an existing install (upgrade.sh):
+# no package install, no default-site changes, and a graceful reload instead
+# of a restart — the listen ports are unchanged, so reload is safe here.
+nginx::refresh() {
+  log::step "Refreshing nginx configuration"
+  nginx::_render_locations
+  nginx::_render_security_headers
+  nginx::_render_conf
+  nginx::_validate
+  systemctl reload nginx
+  log::ok "nginx configuration refreshed"
 }
 
 nginx::_install_package() {
@@ -41,6 +56,31 @@ nginx::_render_locations() {
   local src="${CE_SCRIPT_DIR}/templates/nginx-locations.inc"
   install -m 0644 -o root -g root "$src" "$NGINX_LOCATIONS_INC"
   log::info "nginx locations: $NGINX_LOCATIONS_INC"
+}
+
+# HSTS makes a browser rewrite http://host[:p] to https://host[:p], keeping an
+# explicit port and mapping the default one (80) to 443. So it is safe when
+# there is no plaintext port, or when the plaintext port is 80 and TLS is on
+# 443 (http://host → https://host). Any other plaintext port would be sent to
+# https on that same port, which has no TLS listener — see templates/nginx.conf.
+nginx::_export_hsts_header() {
+  local http="${CE_HTTP_PORT:-80}" https="${CE_PORT:-443}"
+  if [[ "$http" == "none" || "$http" == "0" || ( "$http" == "80" && "$https" == "443" ) ]]; then
+    export CE_HSTS_HEADER='add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;'
+  else
+    export CE_HSTS_HEADER='# HSTS disabled (--http-port enabled)'
+  fi
+}
+
+nginx::_render_security_headers() {
+  local src="${CE_SCRIPT_DIR}/templates/nginx-security-headers.inc"
+  nginx::_export_hsts_header
+  local tmp
+  tmp=$(mktemp)
+  envsubst '$CE_HSTS_HEADER' < "$src" > "$tmp"
+  install -m 0644 -o root -g root "$tmp" "$NGINX_SECURITY_HEADERS_INC"
+  rm -f "$tmp"
+  log::info "nginx security headers: $NGINX_SECURITY_HEADERS_INC"
 }
 
 nginx::_render_conf() {
@@ -95,15 +135,7 @@ nginx::_compose_conf() {
     export CE_LISTEN_V6_HTTP="# IPv6 disabled on host — no [::] listener"
   fi
 
-  # HSTS is only safe when there's no plaintext companion port — see the
-  # comment in templates/nginx.conf for the rationale.
-  if [[ "${CE_HTTP_PORT}" == "none" || "${CE_HTTP_PORT}" == "0" ]]; then
-    export CE_HSTS_HEADER='add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;'
-  else
-    export CE_HSTS_HEADER='# HSTS disabled (--http-port enabled)'
-  fi
-
-  envsubst '$CE_PORT $CE_HSTS_HEADER $CE_LISTEN_V6_SSL' < "$main_tmpl" > "${dest}.tmp"
+  envsubst '$CE_PORT $CE_LISTEN_V6_SSL' < "$main_tmpl" > "${dest}.tmp"
 
   if [[ "${CE_HTTP_PORT}" != "none" && "${CE_HTTP_PORT}" != "0" ]]; then
     printf "\n" >> "${dest}.tmp"
