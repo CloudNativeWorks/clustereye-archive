@@ -308,57 +308,116 @@ fi
 # Çalıştırma yetkisi ver
 chmod +x "$BINARY_PATH"
 
-# Yapılandırma dosyasını oluştur
-echo -e "\n${YELLOW}3. Yapılandırma dosyası oluşturuluyor...${NC}"
-if [ "$BOOTSTRAP_MODE" = "1" ]; then
-    # Bootstrap modu: minimal config üretilir. DB bağlantı bilgileri (user/pass/
-    # instance vb.) ClusterEye arayüzünden girilir ve gRPC ile agent'a iletilir.
-    # agent.yml her kurulumda yeniden yazılır (idempotent re-run).
-    HOSTNAME_VAL="$(hostname 2>/dev/null || echo clustereye-agent)"
-    if [ "$INSECURE" = "1" ]; then SKIP_VERIFY="true"; else SKIP_VERIFY="false"; fi
-    if [ "$TLS_ENABLED" = "1" ]; then TLS_VALUE="true"; else TLS_VALUE="false"; fi
-    cat > "$INSTALL_DIR/agent.yml" << EOF
-name: $HOSTNAME_VAL
-grpc:
-  server_address: $GRPC_ADDRESS
-  tls_enabled: $TLS_VALUE
-  insecure_skip_verify: $SKIP_VERIFY
-auth:
-  registration_token: $REGISTRATION_TOKEN
-logging:
-  level: "INFO"
-  use_filelog: true
-security:
-  enabled: true
-  scan_interval_hours: 6
-EOF
-    chmod 600 "$INSTALL_DIR/agent.yml"
-    echo -e "${GREEN}Bootstrap yapılandırması yazıldı. DB bağlantı bilgileri ClusterEye arayüzünden tamamlanacak.${NC}"
-elif [ -f "$INSTALL_DIR/agent.yml" ]; then
-    echo -e "${YELLOW}Mevcut agent.yml bulundu, üzerine yazılmadı.${NC}"
-else
-    # Manuel (bootstrap'sız) kurulum da artık minimal yazar. Motor bağlantı
-    # blokları agent.yml'a AİT DEĞİL: ClusterEye arayüzünden (Add Agent
-    # sihirbazı ya da Settings > Agent Connections) girilir, API'de saklanır
-    # ve agent şifreli yerel önbelleğine (agent-conn.enc) aynalar.
-    cat > "$INSTALL_DIR/agent.yml" << 'EOF'
-name: Agent
-grpc:
-  # ClusterEye API'nizin gRPC adresi — kurulumdan sonra düzenleyin.
-  server_address: CHANGE_ME:50051
-  tls_enabled: false
-  insecure_skip_verify: false
-logging:
-  level: "INFO"
-security:
-  enabled: true
-  scan_interval_hours: 6
-EOF
+# Agent kaydı (enroll)
+#
+# agent.yml artık yazılmıyor. Agent, tek kullanımlık token ile
+# `clustereye-agent enroll` üzerinden kaydolur; uç nokta ve kimlik şifreli
+# olarak binary'nin yanına (agent-state.enc / agent-secret.enc) yazılır,
+# token hiçbir yerde saklanmaz. DB bağlantı bilgileri ClusterEye arayüzünden
+# (Settings > Agent Connections / Agent Runtime) girilir.
+HOSTNAME_VAL="$(hostname 2>/dev/null || echo clustereye-agent)"
+
+# Daha önce kurulmuş bir agent: eski kurulumdan kalan agent.yml (agent onu
+# sunucu onayından sonra kendisi emekliye ayırır — burada SİLİNMEZ, üzerine
+# YAZILMAZ) ya da önceki bir enroll'dan kalan agent-state.enc.
+EXISTING_INSTALL=0
+if [ -f "$INSTALL_DIR/agent.yml" ] || [ -f "$INSTALL_DIR/agent-state.enc" ]; then
+    EXISTING_INSTALL=1
 fi
 
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Yapılandırma dosyası oluşturma hatası!${NC}"
-    exit 1
+# Elle çalıştırılacak enroll komutu (token'sız kurulumda yazdırılır).
+ENROLL_HINT="sudo $BINARY_PATH enroll --server <API_HOST>:50051 --token <TOKEN> --platform $PLATFORM --name $HOSTNAME_VAL"
+
+# stop_agent_service: kurulu/çalışan agent'ı durdurur. enroll'un akışı çalışan
+# servisin sunucudaki yerini kapmasın ve servis eski önbelleklenmiş sırla
+# yeniden bağlanmasın diye enroll'dan ÖNCE çağrılır.
+# Durdurmadan önce çalışıyor muydu, SERVICE_WAS_RUNNING'e yazılır: enroll
+# başarısız olursa daha önce çalışan bir agent kapalı bırakılmaz.
+SERVICE_WAS_RUNNING=0
+stop_agent_service() {
+    if [ "$BINARY_OS" = "linux" ]; then
+        if [ -f "/etc/systemd/system/$SERVICE_NAME.service" ]; then
+            if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+                SERVICE_WAS_RUNNING=1
+            fi
+            systemctl stop "$SERVICE_NAME" >/dev/null 2>&1 || true
+        fi
+    elif [ "$BINARY_OS" = "solaris" ]; then
+        if command -v svcadm >/dev/null 2>&1 && svcs site/clustereye-agent >/dev/null 2>&1; then
+            if [ "$(svcs -H -o state site/clustereye-agent 2>/dev/null)" = "online" ]; then
+                SERVICE_WAS_RUNNING=1
+            fi
+            svcadm disable -s site/clustereye-agent >/dev/null 2>&1 || true
+        fi
+    fi
+}
+
+# restore_agent_service: enroll başarısız olduğunda, kurulumdan önce çalışan
+# servisi mevcut kaydıyla geri başlatır. Yeni kurulumda hiçbir şey yapmaz.
+restore_agent_service() {
+    [ "$SERVICE_WAS_RUNNING" = "1" ] || return 1
+    if [ "$BINARY_OS" = "linux" ]; then
+        systemctl start "$SERVICE_NAME" >/dev/null 2>&1 || return 1
+    elif [ "$BINARY_OS" = "solaris" ]; then
+        svcadm enable -s site/clustereye-agent >/dev/null 2>&1 || return 1
+    fi
+    return 0
+}
+
+echo -e "\n${YELLOW}3. Agent kaydı...${NC}"
+ENROLLED=0
+if [ "$BOOTSTRAP_MODE" = "1" ]; then
+    if [ -f "$INSTALL_DIR/agent.yml" ]; then
+        echo -e "${YELLOW}Mevcut agent.yml bulundu, üzerine yazılmadı (agent kendisi taşıyacak).${NC}"
+    fi
+    stop_agent_service
+
+    ENROLL_ARGS=(enroll --server "$GRPC_ADDRESS" --token "$REGISTRATION_TOKEN" --platform "$PLATFORM" --name "$HOSTNAME_VAL")
+    # -k aynı zamanda curl'ün sertifika bayrağı: gRPC'de yalnızca --tls ile
+    # birlikte anlamlı (eski agent.yml'daki insecure_skip_verify gibi).
+    # enroll'da --insecure TLS'i zorunlu kılar, düz bağlantıya eklenmez.
+    if [ "$TLS_ENABLED" = "1" ]; then
+        ENROLL_ARGS+=(--tls)
+        [ "$INSECURE" = "1" ] && ENROLL_ARGS+=(--insecure)
+    fi
+
+    # enroll durumu binary'nin yanına yazar; cwd'yi de oraya sabitle.
+    # Zaten kayıtlıysa hiçbir şey yazmadan 0 döner (idempotent re-run).
+    ENROLL_OUTPUT="$(cd "$INSTALL_DIR" && "$BINARY_PATH" "${ENROLL_ARGS[@]}" 2>&1)"
+    ENROLL_RC=$?
+    [ -n "$ENROLL_OUTPUT" ] && echo "$ENROLL_OUTPUT"
+    if [ "$ENROLL_RC" -ne 0 ]; then
+        echo -e "${RED}Agent kaydı başarısız (enroll çıkış kodu $ENROLL_RC).${NC}"
+        case "$ENROLL_RC" in
+            2) echo -e "${RED}Bu agent zaten başka bir API'ye kayıtlı (ya da argümanlar geçersiz).${NC}"
+               echo -e "${YELLOW}Mevcut kaydı bu API'ye taşımak için:${NC}"
+               RECONF_HINT="sudo $BINARY_PATH enroll --reconfigure --server $GRPC_ADDRESS"
+               if [ "$TLS_ENABLED" = "1" ]; then
+                   RECONF_HINT="$RECONF_HINT --tls"
+                   [ "$INSECURE" = "1" ] && RECONF_HINT="$RECONF_HINT --insecure"
+               fi
+               echo "  $RECONF_HINT";;
+            3) echo -e "${RED}API'ye bağlanılamadı: adresi ($GRPC_ADDRESS), portu ve TLS ayarını kontrol edin.${NC}";;
+            4) echo -e "${RED}Kayıt reddedildi: token geçersiz ya da süresi dolmuş olabilir; arayüzden yeni komut üretin.${NC}";;
+        esac
+        if restore_agent_service; then
+            echo -e "${YELLOW}Önceden çalışan agent servisi mevcut kaydıyla yeniden başlatıldı.${NC}"
+        else
+            echo -e "${RED}Servis başlatılmadı.${NC}"
+        fi
+        exit 1
+    fi
+    ENROLLED=1
+    echo -e "${GREEN}Agent kaydedildi. DB bağlantı bilgileri ClusterEye arayüzünden tamamlanacak.${NC}"
+elif [ "$EXISTING_INSTALL" = "1" ]; then
+    if [ -f "$INSTALL_DIR/agent.yml" ]; then
+        echo -e "${YELLOW}Mevcut agent.yml bulundu, üzerine yazılmadı.${NC}"
+    fi
+    echo -e "${YELLOW}Mevcut kayıt korunuyor; servis yeniden başlatılacak.${NC}"
+    stop_agent_service
+    ENROLLED=1
+else
+    echo -e "${YELLOW}Token verilmedi: agent kaydedilmedi, servis başlatılmayacak.${NC}"
 fi
 
 # Servis tanımını oluştur — Linux'ta systemd, Solaris'te SMF
@@ -383,10 +442,11 @@ WantedBy=multi-user.target
 EOF
     systemctl daemon-reload
 
-    if [ "$BOOTSTRAP_MODE" = "1" ]; then
-        # Bootstrap modu: servis otomatik başlatılır, elle yapılandırma gerekmez.
-        echo -e "\n${YELLOW}4. Servis başlatılıyor...${NC}"
-        systemctl enable --now "$SERVICE_NAME"
+    if [ "$ENROLLED" = "1" ]; then
+        # Kayıtlı agent: servis enable edilip (yeniden) başlatılır.
+        echo -e "\n${YELLOW}5. Servis başlatılıyor...${NC}"
+        systemctl enable "$SERVICE_NAME" >/dev/null 2>&1
+        systemctl restart "$SERVICE_NAME"
         echo -e "\n${GREEN}Kurulum tamamlandı ve agent başlatıldı!${NC}"
         echo -e "\n${YELLOW}Agent ClusterEye API'ye bağlanıyor.${NC}"
         echo "Birkaç saniye içinde ClusterEye arayüzünde görünecek ve oradan"
@@ -394,17 +454,18 @@ EOF
         echo -e "\nServis durumu:  sudo systemctl status $SERVICE_NAME"
         echo -e "Loglar:         sudo journalctl -u $SERVICE_NAME -f"
     else
-        echo -e "\n${GREEN}Kurulum tamamlandı!${NC}"
+        echo -e "\n${GREEN}Kurulum tamamlandı (servis başlatılmadı).${NC}"
         echo -e "\n${YELLOW}Önemli:${NC}"
-        echo "1. Yapılandırma dosyasını düzenleyin:"
-        echo "   sudo nano $INSTALL_DIR/agent.yml"
+        echo "1. Agent'ı kaydedin (token: ClusterEye arayüzü > Add Agent):"
+        echo "   $ENROLL_HINT"
+        echo "   (TLS için --tls, özel CA için --ca-file <ca.pem> ekleyin)"
         echo -e "\n2. Servisi başlatın:"
-        echo "   sudo systemctl start $SERVICE_NAME"
-        echo "   sudo systemctl enable $SERVICE_NAME"
+        echo "   sudo systemctl enable --now $SERVICE_NAME"
         echo -e "\n3. Servis durumunu kontrol edin:"
         echo "   sudo systemctl status $SERVICE_NAME"
         echo -e "\n4. Logları izleyin:"
         echo "   sudo journalctl -u $SERVICE_NAME -f"
+        echo -e "\nDB bağlantı bilgileri: ClusterEye arayüzü > Settings > Agent Runtime"
     fi
 
 elif [ "$BINARY_OS" = "solaris" ]; then
@@ -468,15 +529,25 @@ EOF
         echo -e "${YELLOW}Uyarı: svccfg bulunamadı; manifest dosyası yazıldı ama import edilmedi.${NC}"
     fi
 
-    echo -e "\n${GREEN}Kurulum tamamlandı!${NC}"
-    echo -e "\n${YELLOW}Önemli:${NC}"
-    echo "1. Yapılandırma dosyasını düzenleyin:"
-    echo "   sudo vi $INSTALL_DIR/agent.yml"
-    echo -e "\n2. Servisi başlatın:"
-    echo "   sudo svcadm enable site/clustereye-agent"
-    echo -e "\n3. Servis durumunu kontrol edin:"
-    echo "   svcs -l site/clustereye-agent"
-    echo -e "\n4. Logları izleyin:"
-    echo "   tail -f $INSTALL_DIR/agent.log"
-    echo "   svcs -x site/clustereye-agent     # hata varsa detay"
+    if [ "$ENROLLED" = "1" ]; then
+        echo -e "\n${YELLOW}5. Servis başlatılıyor...${NC}"
+        svcadm enable site/clustereye-agent
+        svcadm restart site/clustereye-agent >/dev/null 2>&1 || true
+        echo -e "\n${GREEN}Kurulum tamamlandı ve agent başlatıldı!${NC}"
+        echo "Servis durumu:  svcs -l site/clustereye-agent"
+        echo "Loglar:         tail -f $INSTALL_DIR/agent.log"
+    else
+        echo -e "\n${GREEN}Kurulum tamamlandı (servis başlatılmadı).${NC}"
+        echo -e "\n${YELLOW}Önemli:${NC}"
+        echo "1. Agent'ı kaydedin (token: ClusterEye arayüzü > Add Agent):"
+        echo "   $ENROLL_HINT"
+        echo "   (TLS için --tls, özel CA için --ca-file <ca.pem> ekleyin)"
+        echo -e "\n2. Servisi başlatın:"
+        echo "   sudo svcadm enable site/clustereye-agent"
+        echo -e "\n3. Servis durumunu kontrol edin:"
+        echo "   svcs -l site/clustereye-agent"
+        echo -e "\n4. Logları izleyin:"
+        echo "   tail -f $INSTALL_DIR/agent.log"
+        echo "   svcs -x site/clustereye-agent     # hata varsa detay"
+    fi
 fi
